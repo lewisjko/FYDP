@@ -1,6 +1,6 @@
 ﻿variable_name,value,unit,source,comment
 electrolyzer_eff,0.7667,dimensionless,eqtn 3.1,
-hhv_h2,3.55,kWh/m^3 H2,eqtn 3.1,
+E_hhv_h2,3.55,kWh/m^3 H2,eqtn 3.1,
 E_rated_h2,4.63,kWh/m^3 H2,eqtn 3.1,
 min_E_cap,0,kWh,eqtn 3.3,
 max_E_cap,1000,kWh,eqtn 3.3,
@@ -8,7 +8,8 @@ water_cons_rate,0.4,L H2O/m^3 H2,eqtn 3.4,
 meth_reactor_eff,0.77,dimensionless,eqtn 3.13,
 ramp_limit,0.5,dimensionless,eqtn 3.18,
 EMF_NG,2.41,kg CO_2/m^3 NG,4.12 & 4.13,
-HHV_NG,0.036,MMBtu/m^3,4.9 & 4.11,
+HHV_H2,0.2718,MMBtu/kmol,p.184,
+HHV_NG,0.8053,MMBtu/kmol,p.184,
 D_h,,,4.11,hourly energy demand at natural gas pressure reduction station
 delta,0.001,,4.11 & 4.13,
 EMF_WtP,0.54,kg CO_2/m^3 NG,4.12,
