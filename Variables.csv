@@ -1,42 +1,42 @@
-variable_name	value	unit	source	comment
-electrolyzer_eff	0.7667	dimensionless	eqtn 3.1	
-E_hhv_h2	3.55	kWh/m^3 H2	eqtn 3.1	
-E_rated_h2	4.63	kWh/m^3 H2	eqtn 3.1	
-min_E_cap	0	kWh	eqtn 3.3	
-max_E_cap	1000	kWh	eqtn 3.3	
-water_cons_rate	0.4	L H2O/m^3 H2	eqtn 3.4	
-meth_reactor_eff	0.77	dimensionless	eqtn 3.13	
-ramp_limit	0.5	dimensionless	eqtn 3.18	
-EMF_NG	2.41	kg CO_2/m^3 NG	4.12 & 4.13	
-HHV_H2	68.7	kcal/gmol	3.13	
-HHV_NG	0.036	MMBtu/m^3	4.9 & 4.11	
-D_h			4.11	hourly energy demand at natural gas pressure reduction station
-delta	0.001		4.11 & 4.13	
-EMF_WtP	0.54	kg CO_2/m^3 NG	4.12	
-EMF_CO2comb	1.863	kg CO_2/m^3 NG	4.12	
-EMF_CH4comb	0.000037	kg CH_4/m^3 NG	4.12	
-EMF_N2O	0.000035	kg N2O/m^3 NG	4.12	
-GWP_CH4	25		4.12	
-GWP_N2O	298		4.12	
-EMF_combRNG	0.011355	kg CO2/m^3 RNG	4.13 & 4.14	
-EMF_nuclear	0.017	kg CO2/kWh	4.13	
-EMF_bioCO2	0.000225627	tonnes CO2/m^3 bio CO2	4.13	
-EMF_electrolyzer	0.000003866	tonnes CO2/m^3 H2 produced	4.13	
-EMF_reactor	0.0000153	tonnes Co2/m^3 RNG produced	4.13	
-Emissions_facility	481.4	tonnes of CO2/year	4.15	
-Emissions_waste	928	tonnes of CO2/year	4.15	
-CO2_total	6246451	m^3/year	4.15	
-TVM	9.818		4.9	multiplier factor for 20 yr. at interest 8%
-beta	1.35		4.17	replacement + capital cost factor
-gamma	1714.8	$/m3 reactor capacity	4.17	methanation reactor cost / capacity
-k	2.00E+06	$	4.17	base cost at 0 capacity
-C_upgrading	1172.3	$/m3 reactor capacity	4.17	capital cost of methane upgrading unit
-C_0	1324.3	$/kW	4.18	base cost of a 1MW electrolyzer
-CO2_available	1300.26	m3/hour		hourly flow of CO2
-V_0	222	m3/hour	4.18	base H2 production capacity of a 1MW electrolyzer unit
-mu	0.707		4.18	scaling factor
-C_CO2	0.172	$/m3 CO2	4.19	cost of biogenic CO2
-TC	0.008804	$/kWh	4.19	transmission charge
-C_H2O	0.00314	$/L	4.19	cost of water
-OPEX_upgrading	146.5	$/m3 reactor capacity	4.19	annual operating cost of methane upgrading unit
-reduction_rate			4.9	emissions offset reduction rate
+﻿variable_name,value,unit,source,comment
+electrolyzer_eff,0.7667,dimensionless,eqtn 3.1,
+E_hhv_h2,3.55,kWh/m^3 H2,eqtn 3.1,
+E_rated_h2,4.63,kWh/m^3 H2,eqtn 3.1,
+min_E_cap,0,kWh,eqtn 3.3,
+max_E_cap,1000,kWh,eqtn 3.3,
+water_cons_rate,0.4,L H2O/m^3 H2,eqtn 3.4,
+meth_reactor_eff,0.77,dimensionless,eqtn 3.13,
+ramp_limit,0.5,dimensionless,eqtn 3.18,
+EMF_NG,2.41,kg CO_2/m^3 NG,4.12 & 4.13,
+HHV_H2,68.7,kcal/gmol,3.13,
+HHV_NG,0.036,MMBtu/m^3,4.9 & 4.11,
+D_h,,,4.11,hourly energy demand at natural gas pressure reduction station
+delta,0.001,,4.11 & 4.13,
+EMF_WtP,0.54,kg CO_2/m^3 NG,4.12,
+EMF_CO2comb,1.863,kg CO_2/m^3 NG,4.12,
+EMF_CH4comb,0.000037,kg CH_4/m^3 NG,4.12,
+EMF_N2O,0.000035,kg N2O/m^3 NG,4.12,
+GWP_CH4,25,,4.12,
+GWP_N2O,298,,4.12,
+EMF_combRNG,0.011355,kg CO2/m^3 RNG,4.13 & 4.14,
+EMF_nuclear,0.017,kg CO2/kWh,4.13,
+EMF_bioCO2,0.000225627,tonnes CO2/m^3 bio CO2,4.13,
+EMF_electrolyzer,0.000003866,tonnes CO2/m^3 H2 produced,4.13,
+EMF_reactor,0.0000153,tonnes Co2/m^3 RNG produced,4.13,
+Emissions_facility,481.4,tonnes of CO2/year,4.15,
+Emissions_waste,928,tonnes of CO2/year,4.15,
+CO2_total,6246451,m^3/year,4.15,
+TVM,9.818,,4.9,multiplier factor for 20 yr. at interest 8%
+beta,1.35,,4.17,replacement + capital cost factor
+gamma,1714.8,$/m3 reactor capacity,4.17,methanation reactor cost / capacity
+k,2.00E+06,$,4.17,base cost at 0 capacity
+C_upgrading,1172.3,$/m3 reactor capacity,4.17,capital cost of methane upgrading unit
+C_0,1324.3,$/kW,4.18,base cost of a 1MW electrolyzer
+CO2_available,1300.26,m3/hour,,hourly flow of CO2
+V_0,222,m3/hour,4.18,base H2 production capacity of a 1MW electrolyzer unit
+mu,0.707,,4.18,scaling factor
+C_CO2,0.172,$/m3 CO2,4.19,cost of biogenic CO2
+TC,0.008804,$/kWh,4.19,transmission charge
+C_H2O,0.00314,$/L,4.19,cost of water
+OPEX_upgrading,146.5,$/m3 reactor capacity,4.19,annual operating cost of methane upgrading unit
+reduction_rate,,,4.9,emissions offset reduction rate
