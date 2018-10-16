@@ -24,7 +24,7 @@ TC = var['value']['TC']
 C_H2O = var['value']['C_H2O']
 WCR = var['value']['water_cons_rate']
 
-# MILP model
+# HENG model
 LP_2 = pulp.LpProblem('LP', pulp.LpMinimize)
 N_electrolyzer_2 = pulp.LpVariable('N_electrolyzer_2',
                                  lowBound=0,

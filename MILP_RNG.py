@@ -32,7 +32,7 @@ C_H2O = var['value']['C_H2O']
 WCR = var['value']['water_cons_rate']
 OPEX_upgrading = var['value']['OPEX_upgrading']
 
-# MILP model
+# RNG model
 LP_1 = pulp.LpProblem('LP', pulp.LpMinimize)
 RNG_max = pulp.LpVariable('RNG_max',
                           lowBound=0,
