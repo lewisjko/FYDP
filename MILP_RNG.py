@@ -20,6 +20,14 @@ CO2_available = var['value']['CO2_available']
 E_electrolyzer_min = var['value']['min_E_cap']
 E_electrolyzer_max = var['value']['max_E_cap']
 tau = 0.50
+
+EMF_NG = var['value']['EMF_NG']
+EMF_comb = var['value']['EMF_combRNG']
+EMF_nuc = var['value']['EMF_nuclear']
+EMF_bio = var['value']['EMF_bioCO2']
+EMF_electrolyzer = var['value']['EMF_electrolyzer']
+EMF_reactor = var['value']['EMF_reactor']
+
 beta = var['value']['beta']
 C_0 = var['value']['C_0']
 mu = var['value']['mu']
@@ -34,15 +42,17 @@ OPEX_upgrading = var['value']['OPEX_upgrading']
 
 # RNG model
 LP_1 = pulp.LpProblem('LP', pulp.LpMinimize)
+
 RNG_max = pulp.LpVariable('RNG_max',
                           lowBound=0,
                           cat='Continuous')
 N_electrolyzer_1 = pulp.LpVariable('N_electrolyzer_1',
-                                 lowBound=0,
-                                 cat='Continuous')
+                          lowBound=0,
+                          cat='Continuous')
 alpha_1 = pulp.LpVariable.dicts('alpha_1',
                           [str(i) for i in range(1, 31)],
                           cat='Binary')
+
 E_1 = pulp.LpVariable.dicts('E_1',
                           [str(i) for i in input_df.index],
                           lowBound=0,
@@ -63,6 +73,17 @@ NG_1 = pulp.LpVariable.dicts('NG_1',
                           [str(i) for i in input_df.index],
                           lowBound=0,
                           cat='Continuous')
+
+em_offset_max_1 = pulp.LpVariable('em_offset_max_1',
+                          lowBound=0,
+                          cat='Continuous')
+em_rng = pulp.LpVariable('em_rng',
+                          lowBound=0,
+                          cat='Continuous')
+em_ng = pulp.LpVariable('em_ng',
+                          lowBound=0,
+                          cat='Continuous')
+
 CAPEX_1 = pulp.LpVariable('CAPEX_1', lowBound=0, cat='Continuous')
 OPEX_1 = pulp.LpVariable('OPEX_1', lowBound=0, cat='Continuous')
 
@@ -88,6 +109,13 @@ for i, h in enumerate([str(i) for i in input_df.index]):
     if h == '0':
         LP_1 += pulp.lpSum(n * alpha_1[str(n)] for n in range(1, 31)) == N_electrolyzer_1
         LP_1 += pulp.lpSum(alpha_1) <= 1
+
+# Emission constraints
+LP_1 += pulp.lpSum(EMF_NG * NG_1[h] + EMF_comb * RNG[h] + EMF_nuc * E_1[h] + \
+                   EMF_bio * CO2[h] + EMF_electrolyzer * H2_1[h] + EMF_reactor * RNG[h] \
+                   for h in [str(x) for x in input_df.index]) == em_rng
+LP_1 += pulp.lpSum(EMF_NG * D[h] for h in input_df.index) == em_ng
+LP_1 += em_ng - em_rng == em_offset_max_1
 
 # CAPEX
 C_electrolyzer = [beta * C_0 * i ** mu for i in range(1, 31)]

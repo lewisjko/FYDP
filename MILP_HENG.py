@@ -15,6 +15,11 @@ nu_electrolyzer = var['value']['electrolyzer_eff']
 E_HHV_H2 = var['value']['E_hhv_h2']
 E_electrolyzer_min = var['value']['min_E_cap']
 E_electrolyzer_max = var['value']['max_E_cap']
+
+EMF_NG = var['value']['EMF_NG']
+EMF_nuc = var['value']['EMF_nuclear']
+EMF_electrolyzer = var['value']['EMF_electrolyzer']
+
 beta = var['value']['beta']
 C_0 = var['value']['C_0']
 mu = var['value']['mu']
@@ -48,6 +53,17 @@ NG_2 = pulp.LpVariable.dicts('NG_2',
                           [str(i) for i in input_df.index],
                           lowBound=0,
                           cat='Continuous')
+
+em_2em_offset_max_2 = pulp.LpVariable('em_offset_max_1',
+                          lowBound=0,
+                          cat='Continuous')
+em_heng = pulp.LpVariable('em_heng',
+                          lowBound=0,
+                          cat='Continuous')
+em_ng = pulp.LpVariable('em_ng',
+                          lowBound=0,
+                          cat='Continuous')
+
 CAPEX_2 = pulp.LpVariable('CAPEX_2', cat='Continuous')
 OPEX_2 = pulp.LpVariable('OPEX_2', cat='Continuous')
 
@@ -66,6 +82,12 @@ for i, h in enumerate([str(i) for i in input_df.index]):
     if h == '0':
         LP_2 += pulp.lpSum(n * alpha_2[str(n)] for n in range(1, 31)) == N_electrolyzer_2
         LP_2 += pulp.lpSum(alpha_2) <= 1
+
+# Emission constraints
+LP_2 += pulp.lpSum(EMF_NG * NG_2[h] + EMF_nuc * E_2[h] + EMF_electrolyzer * H2_2[h] \
+                   for h in [str(x) for x in input_df.index]) == em_heng
+LP_2 += pulp.lpSum(EMF_NG * D[h] for h in input_df.index) == em_ng
+LP_2 += em_ng - em_heng == em_offset_max_2
 
 # CAPEX
 C_electrolyzer = [beta * C_0 * i ** mu for i in range(1, 31)]
