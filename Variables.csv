@@ -36,7 +36,21 @@ CO2_available,1300.26,m3/hour,,hourly flow of CO2
 V_0,222,m3/hour,4.18,base H2 production capacity of a 1MW electrolyzer unit
 mu,0.707,,4.18,scaling factor
 C_CO2,0.172,$/m3 CO2,4.19,cost of biogenic CO2
-TC,0.008804,$/kWh,4.19,transmission charge
+TC,0.008804,$/kWh,4.19 p.178/p.181,transmission charge - this is different in ch 4 and 6?
 C_H2O,0.00314,$/L,4.19,cost of water
 OPEX_upgrading,146.5,$/m3 reactor capacity,4.19,annual operating cost of methane upgrading unit
 reduction_rate,,,4.9,emissions offset reduction rate
+Imax,45.39133304,kmol,p.179,upper limit on hydrogen inventory inside tank
+Imin,8.516043857,kmol,p.179,lower limit on hydrogen inventory inside tank
+Fmax_booster,43.5,kmol,p.179,maximum inflow to booster compressor
+Fmax_prestorage,21,kmol,p.179,maximum inflow to prestorage compressor
+N_booster,1,,p.179,number of booster compressor
+N_prestorage,1,,p.179,number of prestorage compressor
+CAPEX_electrolyzer,1324,$/kW,Suaad p.42,electrolyzer capex according to p.42 in Suaad's
+OPEX_electrolyzer,0.04,%of CAPEX,Suaad p.42,electrolyzer opex according to p.42 in Suaad's
+stack_replacement,464,$/kW,Suaad p.42,stack replacement according to p.42 in Suaad's
+CAPEX_booster,37367.92334,$/year,p.179,booster compressor capital cost
+CAPEX_prestorage,25441.99036,$/year,p.179,prestorage compressor capital cost
+CAPEX_tank,30421.51423,$/year,p.179,tank capital cost
+ECF_booster,2.5042,kWh/kmolH2,set is as same as pre-storage,energy consumed by compressor per mol of hydrogen fed 
+ECF_prestorage,2.5042,kWh/kmolH2,p.180,energy consumed by compressor per mol of hydrogen fed 
