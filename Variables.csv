@@ -57,3 +57,12 @@ CAPEX_prestorage,25441.99036,$/year,p.179,prestorage compressor capital cost
 CAPEX_tank,30421.51423,$/year,p.179,tank capital cost
 ECF_booster,2.5042,kWh/kmolH2,set is as same as pre-storage,energy consumed by compressor per mol of hydrogen fed 
 ECF_prestorage,2.5042,kWh/kmolH2,p.180,energy consumed by compressor per mol of hydrogen fed 
+z_booster,1.1,,p.50,"compressibility factor for booster operating with T = 294.15, Pin =20bar, Pout = 350 bar"
+T,294.15,K,p.179,temperature of hydrogen
+R,8.314,kJ/kmolK,p.179,ideal gas constant
+comp_efficiency,0.65,,p.179,isentoripic efficiency of compressor
+heat_cap_ratio,1.4091,,p.179,heat capacity ratio of hydrogen
+P_in_booster,20,bar,p.103,lower limit on pressure of booster compressor
+P_out_booster,350,bar,p.103,"storage pressure of hydrogen gas on board
+fuel cell vehicles"
+N_stage_booster,3,,p.103,number of stages in the booster compressor 
