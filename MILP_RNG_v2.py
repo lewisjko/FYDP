@@ -10,7 +10,7 @@ D = list(input_df['NG_demand(m^3)'])
 HOEP = list(input_df['HOEP'])
 
 # Fixed constants
-N_max = 5000
+N_max = 1000
 nu_electrolyzer = var['value']['electrolyzer_eff']
 E_HHV_H2 = var['value']['E_hhv_h2']
 nu_reactor = var['value']['meth_reactor_eff']
@@ -21,6 +21,7 @@ E_electrolyzer_min = var['value']['min_E_cap']
 E_electrolyzer_max = var['value']['max_E_cap']
 tau = 0.50
 
+phi = 0.30
 EMF_NG = var['value']['EMF_NG']
 EMF_comb = var['value']['EMF_combRNG']
 EMF_nuc = var['value']['EMF_nuclear']
@@ -42,7 +43,7 @@ OPEX_upgrading = var['value']['OPEX_upgrading']
 TVM = var['value']['TVM']
 
 # RNG model
-LP_eps = pulp.LpProblem('LP_eps', pulp.LpMaximize)
+LP_eps = pulp.LpProblem('LP_eps', pulp.LpMinimize)
 LP_cost = pulp.LpProblem('LP_cost', pulp.LpMinimize)
 
 RNG_max = pulp.LpVariable('RNG_max',
@@ -76,6 +77,9 @@ NG_1 = pulp.LpVariable.dicts('NG_1',
                           lowBound=0,
                           cat='Continuous')
 
+em_offset_max_1 = pulp.LpVariable('em_offset_max_1',
+                          lowBound=0,
+                          cat='Continuous')
 em_offset_1 = pulp.LpVariable('em_offset_1',
                           lowBound=0,
                           cat='Continuous')
@@ -134,17 +138,9 @@ LP_cost += pulp.lpSum(CO2[str(n)] * C_CO2 for n in input_df.index) + \
 # Objectives
 LP_eps += em_ng - em_rng, 'Offset_1'
 LP_eps.solve()
-print(LP_eps.status)
 offset_max_1 = LP_eps.objective.value()
 
-"""
-Break
-"""
-
-phi = 0.80
-LP_cost += em_ng - em_rng == em_offset_1
-LP_cost += em_offset_1 >= phi * offset_max_1
-LP_cost += CAPEX_1 + OPEX_1 * TVM, 'Cost_1'
+LP_cost += em_offset_1 >= phi * em_offset_max_1
+LP_cost += CAPEX_1 + OPEX_1 * TVM = var['value']['TVM'], 'Cost_1'
 
 LP_cost.solve()
-print(LP_cost.status)

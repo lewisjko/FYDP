@@ -39,6 +39,7 @@ TC = var['value']['TC']
 C_H2O = var['value']['C_H2O']
 WCR = var['value']['water_cons_rate']
 OPEX_upgrading = var['value']['OPEX_upgrading']
+TVM = var['value']['TVM']
 
 # RNG + HENG model
 LP = pulp.LpProblem('LP', pulp.LpMinimize)
@@ -49,7 +50,7 @@ RNG_max = pulp.LpVariable('RNG_max',
                           cat='Continuous')
 N_electrolyzer_1 = pulp.LpVariable('N_electrolyzer_1',
                                  lowBound=0,
-                                 cat='Continuous')
+                                 cat='Integer')
 alpha_1 = pulp.LpVariable.dicts('alpha_1',
                           [str(i) for i in range(1, 31)],
                           cat='Binary')
@@ -71,26 +72,13 @@ CO2 = pulp.LpVariable.dicts('CO2_1',
                           lowBound=0,
                           cat='Continuous')
 
-em_offset_max = pulp.LpVariable('em_offset_max',
-                          lowBound=0,
-                          cat='Continuous')
-em_rng = pulp.LpVariable('em_rng',
-                          lowBound=0,
-                          cat='Continuous')
-em_heng = pulp.LpVariable('em_heng',
-                          lowBound=0,
-                          cat='Continuous')
-em_ng = pulp.LpVariable('em_ng',
-                          lowBound=0,
-                          cat='Continuous')
-
 CAPEX_1 = pulp.LpVariable('CAPEX_1', lowBound=0, cat='Continuous')
 OPEX_1 = pulp.LpVariable('OPEX_1', lowBound=0, cat='Continuous')
 
 # HENG Variables
 N_electrolyzer_2 = pulp.LpVariable('N_electrolyzer_2',
                                  lowBound=0,
-                                 cat='Continuous')
+                                 cat='Integer')
 alpha_2 = pulp.LpVariable.dicts('alpha_2',
                           [str(i) for i in range(1, 31)],
                           cat='Binary')
@@ -112,6 +100,21 @@ OPEX_2 = pulp.LpVariable('OPEX_2', cat='Continuous')
 # Shared Variables
 NG = pulp.LpVariable.dicts('NG',
                           [str(i) for i in input_df.index],
+                          lowBound=0,
+                          cat='Continuous')
+em_offset_max = pulp.LpVariable('em_offset_max',
+                          lowBound=0,
+                          cat='Continuous')
+em_offset = pulp.LpVariable('em_offset',
+                          lowBound=0,
+                          cat='Continuous')
+em_rng = pulp.LpVariable('em_rng',
+                          lowBound=0,
+                          cat='Continuous')
+em_heng = pulp.LpVariable('em_heng',
+                          lowBound=0,
+                          cat='Continuous')
+em_ng = pulp.LpVariable('em_ng',
                           lowBound=0,
                           cat='Continuous')
 
@@ -159,7 +162,7 @@ LP += pulp.lpSum(EMF_comb * RNG[h] + EMF_nuc * E_1[h] + EMF_bio * CO2[h] + \
 LP += pulp.lpSum(EMF_NG * NG[h] + EMF_nuc * E_2[h] + EMF_electrolyzer * H2_2[h] \
                    for h in [str(x) for x in input_df.index]) == em_heng
 LP += pulp.lpSum(EMF_NG * D[h] for h in input_df.index) == em_ng
-LP += em_offset_max == em_ng - em_rng - em_heng
+LP += em_offset == em_ng - em_rng - em_heng
 
 # Electrolyzer cost
 C_electrolyzer = [beta * C_0 * i ** mu for i in range(1, 31)]
