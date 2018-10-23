@@ -1,4 +1,6 @@
 ﻿variable_name,value,unit,source,comment
+MW_H2,1.008,kg/kmol,internet,
+density_H2,0.0899,kg/m^3,ushnik,
 electrolyzer_eff,0.7667,dimensionless,eqtn 3.1,
 E_hhv_h2,3.55,kWh/m^3 H2,eqtn 3.1,
 E_rated_h2,4.63,kWh/m^3 H2,eqtn 3.1,
@@ -7,7 +9,7 @@ max_E_cap,1000,kWh,eqtn 3.3,
 water_cons_rate,0.4,L H2O/m^3 H2,eqtn 3.4,
 meth_reactor_eff,0.77,dimensionless,eqtn 3.13,
 ramp_limit,0.5,dimensionless,eqtn 3.18,
-EMF_NG,2.41,kg CO_2/m^3 NG,4.12 & 4.13,
+EMF_NG,0.00241,tonne CO_2/m^3 NG,4.12 & 4.13,
 HHV_H2,0.2718,MMBtu/kmol,p.184,
 HHV_NG,0.8053,MMBtu/kmol,p.184,
 D_h,,,4.11,hourly energy demand at natural gas pressure reduction station
@@ -46,6 +48,7 @@ Fmax_booster,43.5,kmol,p.179,maximum inflow to booster compressor
 Fmax_prestorage,21,kmol,p.179,maximum inflow to prestorage compressor
 N_booster,1,,p.179,number of booster compressor
 N_prestorage,1,,p.179,number of prestorage compressor
+N_tank,1,,p.170,number of hydrogen storage
 CAPEX_electrolyzer,1324,$/kW,Suaad p.42,electrolyzer capex according to p.42 in Suaad's
 OPEX_electrolyzer,0.04,%of CAPEX,Suaad p.42,electrolyzer opex according to p.42 in Suaad's
 stack_replacement,464,$/kW,Suaad p.42,stack replacement according to p.42 in Suaad's
