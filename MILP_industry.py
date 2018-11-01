@@ -156,6 +156,5 @@ LP_4 += pulp.lpSum((E_4[str(n)]+ECF_booster* (H2_4[str(n)])) * (HOEP[n] + TC) fo
 LP_4 += CAPEX_4 + OPEX_4 * TVM, 'Cost_4'
 
 LP_4.solve()
-
 print([x.varValue for x in LP_4.variables()])
 print(pulp.value(LP_4.objective))
