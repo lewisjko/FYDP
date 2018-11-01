@@ -4,9 +4,6 @@ Combined model
 
 import pulp
 
-input_df = None
-var = None
-
 # Time-series constants
 SBG = list(input_df['SBG(kWh)'])
 NG_demand = list(input_df['NG_demand(m^3)'])
@@ -18,35 +15,35 @@ EMF = list(input_df['EMF(tonne/kWh)'])
 N_max = 1000
 N_max += 1
 nu_electrolyzer = var['value']['electrolyzer_eff']
-E_HHV_H2 = var['value']['E_hhv_h2']
+E_HHV_H2 = var['value']['E_hhv_h2'] #kwh/m^3
 nu_reactor = var['value']['meth_reactor_eff']
-HHV_H2 = var['value']['HHV_H2']
-HHV_NG = var['value']['HHV_NG']
-CO2_available = var['value']['CO2_available']
-E_electrolyzer_min = var['value']['min_E_cap']
-E_electrolyzer_max = var['value']['max_E_cap']
+HHV_H2 = var['value']['HHV_H2'] #MMBtu/kmol
+HHV_NG = var['value']['HHV_NG'] #MMBtu/kmol
+CO2_available = var['value']['CO2_available'] #m^3/h
+E_electrolyzer_min = var['value']['min_E_cap'] #kwh
+E_electrolyzer_max = var['value']['max_E_cap'] #kwh
 tau = 0.50
 
-EMF_NG = var['value']['EMF_NG']
-EMF_comb = var['value']['EMF_combRNG']
-EMF_bio = var['value']['EMF_bioCO2']
-EMF_electrolyzer = var['value']['EMF_electrolyzer']
-EMF_reactor = var['value']['EMF_reactor']
-EMF_vehicle = var['Value']['emission_gasoline_v']
+EMF_NG = var['value']['EMF_NG'] #tonne CO2/m^3 H2
+EMF_comb = var['value']['EMF_combRNG'] #tonne CO2/m^3 RNG
+EMF_bio = var['value']['EMF_bioCO2'] #tonne CO2/kWh
+EMF_electrolyzer = var['value']['EMF_electrolyzer'] #tonne CO2/m^3 H2
+EMF_reactor = var['value']['EMF_reactor'] #tonne CO2/m^3 RNG
+EMF_vehicle = var['Value']['emission_gasoline_v'] #tonne CO2/car/year
 num_vehicle = var['Value']['N_gasoline_v']
-FCV_penetration = var['Value']['FCV_penetration']
+FCV_penetration = var['Value']['FCV_penetration'] #FCV market penetration (estimated)
 
 beta = var['value']['beta']
-C_0 = var['value']['C_0']
+C_0 = var['value']['C_0'] #$/kW
 mu = var['value']['mu']
 gamma = var['value']['gamma']
-k = var['value']['k']
-C_upgrading = var['value']['C_upgrading']
-C_CO2 = var['value']['C_CO2']
-TC = var['value']['TC']
-C_H2O = var['value']['C_H2O']
-WCR = var['value']['water_cons_rate']
-OPEX_upgrading = var['value']['OPEX_upgrading']
+k = var['value']['k'] #$
+C_upgrading = var['value']['C_upgrading'] #$/m^3 reactor capacity
+C_CO2 = var['value']['C_CO2'] #$/m^3 CO2
+TC = var['value']['TC'] #$/kWh
+C_H2O = var['value']['C_H2O'] #$/L
+WCR = var['value']['water_cons_rate'] #L H2O/m^3 H2
+OPEX_upgrading = var['value']['OPEX_upgrading'] #$/m^3 reactor capacity
 TVM = var['value']['TVM']
 
 # Fixed constants for transportation models
@@ -96,12 +93,11 @@ RNG_max = pulp.LpVariable('RNG_max',
                           lowBound=0,
                           cat='Continuous')
 N_electrolyzer_1 = pulp.LpVariable('N_electrolyzer_1',
-                                 lowBound=0,
-                                 cat='Integer')
+                          lowBound=0,
+                          cat='Integer')
 alpha_1 = pulp.LpVariable.dicts('alpha_1',
                           [str(i) for i in range(1, N_max)],
                           cat='Binary')
-
 E_1 = pulp.LpVariable.dicts('E_1',
                           [str(i) for i in input_df.index],
                           lowBound=0,
@@ -124,8 +120,8 @@ OPEX_1 = pulp.LpVariable('OPEX_1', lowBound=0, cat='Continuous')
 
 # HENG Variables
 N_electrolyzer_2 = pulp.LpVariable('N_electrolyzer_2',
-                                 lowBound=0,
-                                 cat='Integer')
+                          lowBound=0,
+                          cat='Integer')
 alpha_2 = pulp.LpVariable.dicts('alpha_2',
                           [str(i) for i in range(1, N_max)],
                           cat='Binary')
@@ -137,6 +133,7 @@ H2_2 = pulp.LpVariable.dicts('H2_2',
                           [str(i) for i in input_df.index],
                           lowBound=0,
                           cat='Continuous')
+
 CAPEX_2 = pulp.LpVariable('CAPEX_2', lowBound=0, cat='Continuous')
 OPEX_2 = pulp.LpVariable('OPEX_2', lowBound=0, cat='Continuous')
 
@@ -144,30 +141,22 @@ OPEX_2 = pulp.LpVariable('OPEX_2', lowBound=0, cat='Continuous')
 N_electrolyzer_3 = pulp.LpVariable('N_electrolyzer_3',
                           lowBound=0,
                           cat='Integer')
-
 N_booster = pulp.LpVariable('N_booster',
                           lowBound=0,
                           cat='Integer')
-
 N_prestorage = pulp.LpVariable('N_prestorage',
                           lowBound=0,
                           cat='Integer')
-
 N_tank = pulp.LpVariable('N_tank',
                           lowBound=0,
                           cat='Integer')
-
-
 alpha_3 = pulp.LpVariable.dicts('alpha_3',
                           [str(i) for i in range(1, N_max+1)],
                           cat='Binary')
-
-
 E_3 = pulp.LpVariable.dicts('E_3',
                           [str(i) for i in input_df.index],
                           lowBound=0,
                           cat='Continuous')
-
 H2_3 = pulp.LpVariable.dicts('H2_3',
                           [str(i) for i in input_df.index],
                           lowBound=0,
