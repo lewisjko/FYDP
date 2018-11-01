@@ -4,9 +4,6 @@ Combined model
 
 import pulp
 
-input_df = None
-var = None
-
 # Time-series constants
 SBG = list(input_df['SBG(kWh)'])
 NG_demand = list(input_df['NG_demand(m^3)'])
@@ -96,12 +93,11 @@ RNG_max = pulp.LpVariable('RNG_max',
                           lowBound=0,
                           cat='Continuous')
 N_electrolyzer_1 = pulp.LpVariable('N_electrolyzer_1',
-                                 lowBound=0,
-                                 cat='Integer')
+                          lowBound=0,
+                          cat='Integer')
 alpha_1 = pulp.LpVariable.dicts('alpha_1',
                           [str(i) for i in range(1, N_max)],
                           cat='Binary')
-
 E_1 = pulp.LpVariable.dicts('E_1',
                           [str(i) for i in input_df.index],
                           lowBound=0,
@@ -124,8 +120,8 @@ OPEX_1 = pulp.LpVariable('OPEX_1', lowBound=0, cat='Continuous')
 
 # HENG Variables
 N_electrolyzer_2 = pulp.LpVariable('N_electrolyzer_2',
-                                 lowBound=0,
-                                 cat='Integer')
+                          lowBound=0,
+                          cat='Integer')
 alpha_2 = pulp.LpVariable.dicts('alpha_2',
                           [str(i) for i in range(1, N_max)],
                           cat='Binary')
@@ -137,6 +133,7 @@ H2_2 = pulp.LpVariable.dicts('H2_2',
                           [str(i) for i in input_df.index],
                           lowBound=0,
                           cat='Continuous')
+
 CAPEX_2 = pulp.LpVariable('CAPEX_2', lowBound=0, cat='Continuous')
 OPEX_2 = pulp.LpVariable('OPEX_2', lowBound=0, cat='Continuous')
 
@@ -144,30 +141,22 @@ OPEX_2 = pulp.LpVariable('OPEX_2', lowBound=0, cat='Continuous')
 N_electrolyzer_3 = pulp.LpVariable('N_electrolyzer_3',
                           lowBound=0,
                           cat='Integer')
-
 N_booster = pulp.LpVariable('N_booster',
                           lowBound=0,
                           cat='Integer')
-
 N_prestorage = pulp.LpVariable('N_prestorage',
                           lowBound=0,
                           cat='Integer')
-
 N_tank = pulp.LpVariable('N_tank',
                           lowBound=0,
                           cat='Integer')
-
-
 alpha_3 = pulp.LpVariable.dicts('alpha_3',
                           [str(i) for i in range(1, N_max+1)],
                           cat='Binary')
-
-
 E_3 = pulp.LpVariable.dicts('E_3',
                           [str(i) for i in input_df.index],
                           lowBound=0,
                           cat='Continuous')
-
 H2_3 = pulp.LpVariable.dicts('H2_3',
                           [str(i) for i in input_df.index],
                           lowBound=0,
