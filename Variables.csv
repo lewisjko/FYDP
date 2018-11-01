@@ -66,3 +66,8 @@ P_in_booster,20,bar,p.103,lower limit on pressure of booster compressor
 P_out_booster,350,bar,p.103,"storage pressure of hydrogen gas on board
 fuel cell vehicles"
 N_stage_booster,3,,p.103,number of stages in the booster compressor 
+EMF_SMR,18,kgCO2/kmolH2,p.185,Emission factor of steam methane reforming process for hydrogen production
+FCV_penetration,0.012,,p. 54 Suaad,fraction of expected penetration of FCV in 2017
+N_FCV,100000,,p. 54 Suaad,number of fuel cell vehicles expected
+emission_gasoline_v,4.6,tonne CO2/vehicle/year,p. 46 Suaad,average gasoline vehicle emission per year
+N_gasoline_v,8198090,,p. 54 Suaad,number of light duty gasoline vehicles in 2017
