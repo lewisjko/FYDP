@@ -1,8 +1,3 @@
-"""
-Model for Industry
-"""
-
-
 import pulp
 import pandas as pd
 
@@ -28,6 +23,7 @@ EMF_nuc = var['value']['EMF_nuclear'] #tonne CO2 / kWh
 EMF_bio = var['value']['EMF_bioCO2'] #tonne CO2/m^3 bio CO2
 EMF_electrolyzer = var['value']['EMF_electrolyzer'] #tonne CO2 /m^3 H2
 EMF_reactor = var['value']['EMF_reactor'] #tonne CO2 /m^3 RNG produced
+EMF_SMR=var['value']['EMF_SMR'] #kg CO2/kmol of H2
 
 beta = var['value']['beta']
 C_0 = var['value']['C_0'] #$/kW
@@ -43,7 +39,7 @@ OPEX_upgrading = var['value']['OPEX_upgrading'] #$/m^3 reactor capacity
 TVM = var['value']['TVM']
 
 
-# Fixed constants for transportation models 
+# Fixed constants for industry models 
 
 Fmax_booster = var['value']['Fmax_booster'] #kmol
 
@@ -78,11 +74,11 @@ Fmax_booster = Fmax_booster * MW_H2 / density_H2 # m^3
 
 ECF_booster = ECF_booster / MW_H2 * density_H2 #kWh/m^3
 
+EMF_SMR=EMF_SMR*0.001/MW_H2*density_H2 #tonne CO2/m^3 of H2
 
 
 #number of electrolyzer max
 N_electrolyzer_max = int(5000)
-N_booster_max = int(5000)
 
 
 
@@ -113,7 +109,15 @@ H2_4 = pulp.LpVariable.dicts('H2_4',
                           [str(i) for i in input_df.index],
                           lowBound=0,
                           cat='Continuous')
-
+em_offset_max_4 = pulp.LpVariable('em_offset_max_4',
+                          lowBound=0,
+                          cat='Continuous')
+em_old = pulp.LpVariable('em_old',
+                          lowBound=0,
+                          cat='Continuous')
+em_ind = pulp.LpVariable('em_ind',
+                          lowBound=0,
+                          cat='Continuous')
 
 CAPEX_4 = pulp.LpVariable('CAPEX_4', cat='Continuous')
 OPEX_4 = pulp.LpVariable('OPEX_4', cat='Continuous')
@@ -124,7 +128,7 @@ for i, h in enumerate([str(i) for i in input_df.index]):
 
     # Demand constraint
     # Actual H2 Demand is 0.05 of total industrial demand
-    LP_4 += H2_4[h] == 0.05*D[i]
+    LP_4 += H2_4[h] == D[i]
 
     # Electrolyzer constraints
     
@@ -136,17 +140,19 @@ for i, h in enumerate([str(i) for i in input_df.index]):
     if h == '0':
         LP_4 += pulp.lpSum(n * alpha_4[str(n)] for n in range(1, N_electrolyzer_max+1)) == N_electrolyzer_4
         LP_4 += pulp.lpSum(alpha_4) <= 1
-        
-     #number of booster constraint
-        LP_4 += N_booster_4 <= N_booster_max
-    
+
+#Emission
+LP_4 += pulp.lpSum(EMF_SMR*D[h] for h in input_df.index)==em_old
+LP_4 +=pulp.lpSum(EMF_avg*E_4[h]+EMF_electrolyzer*H2_4[h] for h in [str(x) for x in input_df.index])==em_ind
+LP_4 +=em_old-em_ind==em_offset_max_4
+     
 #Compressor Capacity Constraint   
 LP_4 += H2_4[h] <= N_booster_4 * Fmax_booster
         
 # CAPEX (electrolyzer+Booster pump)
 C_electrolyzer = [beta * C_0 * i ** mu for i in range(1, N_electrolyzer_max+1)]
 LP_4 += pulp.lpSum(alpha_4[str(n)] * C_electrolyzer[n - 1] for n in range(1, N_electrolyzer_max+1))+\
-                   N_booster_4*CAPEX_booster == CAPEX_4
+                   N_booster_4*CAPEX_booster*TVM == CAPEX_4
 
 # OPEX (+electericity consumed by running electrolyzer and booster)
 LP_4 += pulp.lpSum((E_4[str(n)]+ECF_booster* (H2_4[str(n)])) * (HOEP[n] + TC) for n in input_df.index) + \
