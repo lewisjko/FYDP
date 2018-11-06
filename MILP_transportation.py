@@ -212,7 +212,7 @@ LP_3 += pulp.lpSum((E_3[str(n)] + \
         pulp.lpSum(H2_3[str(n)] * C_H2O * WCR for n in input_df.index) == OPEX_3
 
 
-em_offset_fcv = num_vehicle * FCV_penetration * EMF_vehicle
+em_offset_fcv = 100000 * EMF_vehicle
 
 LP_3 += pulp.lpSum(EMF[n] * (ECF_booster * (H2_tank_out[str(n)] + H2_direct[str(n)]) + \
                     ECF_prestorage * H2_tank_in[str(n)]) for n in input_df.index)  == em_compressor
