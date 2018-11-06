@@ -9,6 +9,7 @@ import pandas as pd
 SBG = list(input_df['SBG(kWh)']) #kwh
 mobility_demand = list(input_df['mobility_demand(m^3)']) #m^3
 HOEP = list(input_df['HOEP']) #$/kwh
+EMF = list(input_df['EMF(tonne/kWh)'])
 
 # Fixed constants for other models 
 nu_electrolyzer = var['value']['electrolyzer_eff'] #dimensionless
@@ -27,6 +28,10 @@ EMF_nuc = var['value']['EMF_nuclear'] #tonne CO2 / kWh
 EMF_bio = var['value']['EMF_bioCO2'] #tonne CO2/m^3 bio CO2
 EMF_electrolyzer = var['value']['EMF_electrolyzer'] #tonne CO2 /m^3 H2
 EMF_reactor = var['value']['EMF_reactor'] #tonne CO2 /m^3 RNG produced
+EMF_vehicle = var['value']['emission_gasoline_v'] #tonne CO2/car/year
+num_vehicle = var['value']['N_gasoline_v']
+FCV_penetration = var['value']['FCV_penetration'] #FCV market penetration (estimated)
+
 
 beta = var['value']['beta']
 C_0 = var['value']['C_0'] #$/kW
@@ -147,6 +152,10 @@ I_H2 = pulp.LpVariable.dicts('I_H2',
                           lowBound=0,
                           cat='Continuous')
 
+em_compressor = pulp.LpVariable('em_compressor',
+                          lowBound=0,
+                          cat='Continuous')
+
 
 CAPEX_3 = pulp.LpVariable('CAPEX_3', lowBound=0, cat='Continuous')
 OPEX_3 = pulp.LpVariable('OPEX_3', lowBound=0, cat='Continuous')
@@ -158,13 +167,12 @@ for i, h in enumerate([str(i) for i in input_df.index]):
     LP_3 += H2_3[h] == H2_tank_in[h] + H2_direct[h] 
 
     #hydrogen storage inventory constraint 
-    if h == '0': #at hour zero, no accumulatione exists
-        LP_3 += I_H2[h] == H2_tank_in[h] - H2_tank_out[h]
+    if h == '0': #at hour zero, accumulation assumed to be Imin*Ntank
+        LP_3 += I_H2[h] == Imin * N_tank + H2_tank_in[h] - H2_tank_out[h]
     else: #at hour non zero accumulation exists 
         LP_3 += I_H2[h] == I_H2[str(i-1)] + H2_tank_in[h] - H2_tank_out[h]
     
 
-    
     # Demand constraint
     LP_3 += H2_tank_out[h] + H2_direct[h] == mobility_demand[i] 
 
@@ -181,25 +189,12 @@ for i, h in enumerate([str(i) for i in input_df.index]):
          
     #storage inventory constraint 
     LP_3 += I_H2[h] <= Imax * N_tank  
-        #If the lower limit is disabled, it gives the optimal solution
-        #However, due to the pressure that needs to be maintained, we need to have the lower limit
-#     LP_3 += I_H2[h] >= Imin * N_tank
-    LP_3 += I_H2[h] >= 0
- 
+    LP_3 += I_H2[h] >= Imin * N_tank
+
     #compressor capacity constraint
     LP_3 += H2_tank_in[h] <= N_prestorage * Fmax_prestorage
     LP_3 += H2_tank_out[h] + H2_direct[h] <= N_booster * Fmax_booster
 
-
-#number of tank contraint
-# LP_3 += N_tank <= N_tank_max
-# LP_3 += N_tank >= 0
-# #number of booster compressor constraint 
-# LP_3 += N_booster <= N_booster_max
-# LP_3 += N_booster >= 0
-# #number of prestorage compressor constraint
-# LP_3 += N_prestorage <= N_prestorage_max
-# LP_3 += N_prestorage >= 0
     
 # Cost of electrolyzer list
 C_electrolyzer = [beta * C_0 * i ** mu for i in range(1, N_electrolyzer_max+1)]
@@ -216,6 +211,13 @@ LP_3 += pulp.lpSum((E_3[str(n)] + \
                     ECF_prestorage * H2_tank_in[str(n)]) * (HOEP[n] + TC) for n in input_df.index) + \
         pulp.lpSum(H2_3[str(n)] * C_H2O * WCR for n in input_df.index) == OPEX_3
 
+
+em_offset_fcv = num_vehicle * FCV_penetration * EMF_vehicle
+
+LP_3 += pulp.lpSum(EMF[n] * (ECF_booster * (H2_tank_out[str(n)] + H2_direct[str(n)]) + \
+                    ECF_prestorage * H2_tank_in[str(n)]) for n in input_df.index)  == em_compressor
+
+
 # Objective
 LP_3 += CAPEX_3 + OPEX_3 * TVM, 'Cost_3'
 
@@ -228,3 +230,4 @@ print(N_booster.value())
 print(N_prestorage.value())
 print(N_tank.value())
 print(CAPEX_3.value(), OPEX_3.value())
+
