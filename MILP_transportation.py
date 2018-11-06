@@ -203,7 +203,7 @@ C_electrolyzer = [beta * C_0 * i ** mu for i in range(1, N_electrolyzer_max+1)]
 LP_3 += pulp.lpSum(alpha_3[str(n)] * C_electrolyzer[n - 1] for n in range(1, N_electrolyzer_max+1)) + \
         (N_booster * CAPEX_booster + \
         N_prestorage * CAPEX_prestorage + \
-        N_tank * CAPEX_tank) * TVM == CAPEX_3
+        N_tank * CAPEX_tank) * 20 == CAPEX_3
 
 
 LP_3 += pulp.lpSum((E_3[str(n)] + \
