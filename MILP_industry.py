@@ -151,8 +151,8 @@ LP_4 += H2_4[h] <= N_booster_4 * Fmax_booster
         
 # CAPEX (electrolyzer+Booster pump)
 C_electrolyzer = [beta * C_0 * i ** mu for i in range(1, N_electrolyzer_max+1)]
-LP_4 += pulp.lpSum(alpha_4[str(n)] * C_electrolyzer[n - 1] for n in range(1, N_electrolyzer_max+1))+\
-                   N_booster_4*CAPEX_booster*TVM == CAPEX_4
+LP_4 += (pulp.lpSum(alpha_4[str(n)] * C_electrolyzer[n - 1] for n in range(1, N_electrolyzer_max+1))+\
+                   N_booster_4*CAPEX_booster)*TVM == CAPEX_4
 
 # OPEX (+electericity consumed by running electrolyzer and booster)
 LP_4 += pulp.lpSum((E_4[str(n)]+ECF_booster* (H2_4[str(n)])) * (HOEP[n] + TC) for n in input_df.index) + \
