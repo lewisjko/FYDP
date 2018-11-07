@@ -203,7 +203,7 @@ C_electrolyzer = [beta * C_0 * i ** mu for i in range(1, N_electrolyzer_max+1)]
 LP_3 += pulp.lpSum(alpha_3[str(n)] * C_electrolyzer[n - 1] for n in range(1, N_electrolyzer_max+1)) + \
         (N_booster * CAPEX_booster + \
         N_prestorage * CAPEX_prestorage + \
-        N_tank * CAPEX_tank) * TVM == CAPEX_3
+        N_tank * CAPEX_tank) * 20 == CAPEX_3
 
 
 LP_3 += pulp.lpSum((E_3[str(n)] + \
@@ -212,7 +212,7 @@ LP_3 += pulp.lpSum((E_3[str(n)] + \
         pulp.lpSum(H2_3[str(n)] * C_H2O * WCR for n in input_df.index) == OPEX_3
 
 
-em_offset_fcv = num_vehicle * FCV_penetration * EMF_vehicle
+em_offset_fcv = 100000 * EMF_vehicle
 
 LP_3 += pulp.lpSum(EMF[n] * (ECF_booster * (H2_tank_out[str(n)] + H2_direct[str(n)]) + \
                     ECF_prestorage * H2_tank_in[str(n)]) for n in input_df.index)  == em_compressor
