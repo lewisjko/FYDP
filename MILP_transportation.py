@@ -230,11 +230,7 @@ LP_cost_3 += pulp.lpSum((E_3[str(n)] + \
 # This is going to be the contraint in the cost minimization
 phi = 0.8
 
-# Objective
-LP += CAPEX_3 + OPEX_3 * TVM, 'Cost_3'
-
 # Cost LP Objective
-phi = 0.80
 LP_cost_3 += em_offset_fcv - em_compressor_3 - em_electrolyzer_3 == em_offset_3
 LP_cost_3 += em_offset_3 >= phi * offset_max_3
 LP_cost_3 += CAPEX_3 + OPEX_3 * TVM, 'Cost_3'
