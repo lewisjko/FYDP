@@ -63,7 +63,7 @@ NG_2 = pulp.LpVariable.dicts('NG_2',
                           lowBound=0,
                           cat='Continuous')
 
-em_offset_2 = pulp.LpVariable('em_offset_max_1',
+em_offset_2 = pulp.LpVariable('em_offset_2',
                           lowBound=0,
                           cat='Continuous')
 em_heng = pulp.LpVariable('em_heng',
