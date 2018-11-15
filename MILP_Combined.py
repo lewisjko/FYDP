@@ -241,13 +241,13 @@ OPEX_reactor = pulp.LpVariable('OPEX_reactor', lowBound=0, cat='Continuous')
 OPEX_booster_comp = pulp.LpVariable('OPEX_booster_comp', lowBound=0, cat='Continuous')
 
 # Total cost
-total_cost = pulp.LpVariable('OPEX_booster_comp', lowBound=0, cat='Continuous')
+total_cost = pulp.LpVariable('total_cost', lowBound=0, cat='Continuous')
 
 
 for LP in [LP_eps, LP_cost]:
     for i, h in enumerate([str(i) for i in input_df.index]):
         # Energy and flow constraints
-        LP += H2_direct[h] + H2_tank_in[h] == E[h] * E_HHV_H2 ** (-1)
+        LP += H2_direct[h] + H2_tank_in[h] == nu_electrolyzer * E[h] * E_HHV_H2 ** (-1)
         LP += H2_direct[h] + H2_tank_out[h] == H2_1[h] + H2_2[h] + H2_3[h] + H2_4[h]
 
         # Hydrogen storage tank constraint
@@ -305,7 +305,7 @@ for LP in [LP_eps, LP_cost]:
                      for h in [str(x) for x in input_df.index]) == em_rng
     LP += pulp.lpSum(EMF_NG * NG[h] for h in [str(x) for x in input_df.index]) == em_heng
     LP += pulp.lpSum(EMF_NG * NG_demand[h] for h in input_df.index) == em_ng
-    em_gas_vehicle = num_vehicle * FCV_penetration * EMF_vehicle
+    em_gas_vehicle = 100000 * EMF_vehicle
     LP += pulp.lpSum(EMF_SMR * industry_demand[h] for h in input_df.index) == em_smr
     LP += pulp.lpSum(EMF[int(h)] * (E[h]) for h in [str(x) for x in input_df.index]) == em_sbg
     LP += pulp.lpSum(EMF_electrolyzer * (H2_direct[h] + H2_tank_in[h]) \
