@@ -2,9 +2,25 @@
 Model for Transportation
 """
 
+
+'''
+Functions for creating variable df and exporting as a csv file 
+'''
+def create_var_df(LP_object):
+    variable_tuple = [(v.name,v.varValue) for v in LP_object.variables()]
+    
+    variable_df = pd.DataFrame(data=variable_tuple,columns=['variable','value'])
+    
+    return variable_df
+
+def export_to_csv(df,filename):
+    df.to_csv(filename+'.csv')
+
+
+
 import pulp
 import pandas as pd
-
+import time 
 
 # Time-series constants
 SBG = list(input_df['SBG(kWh)']) #kwh
@@ -155,6 +171,13 @@ em_offset_3 = pulp.LpVariable('em_offset_3',
                           lowBound=0,
                           cat='Continuous')
 
+#emission for sbg
+em_sbg_3 = pulp.LpVariable('em_sbg_3',
+                          lowBound=0,
+                          cat='Continuous')
+
+
+
 #CAPEX and OPEX
 CAPEX_3 = pulp.LpVariable('CAPEX_3', lowBound=0, cat='Continuous')
 OPEX_3 = pulp.LpVariable('OPEX_3', lowBound=0, cat='Continuous')
@@ -200,13 +223,15 @@ for LP in [LP_eps_3,LP_cost_3]:
     
 
     LP += pulp.lpSum(EMF_electrolyzer * H2_3[h] for h in [str(x) for x in input_df.index]) == em_electrolyzer_3
+    LP += pulp.lpSum(EMF[int(h)] * (E_3[h]) for h in [str(x) for x in input_df.index]) == em_sbg_3
+    
 
     
 #emission offset by FCV is emission offset due to replacing gasoline vehicle
 em_offset_fcv = 100000 * EMF_vehicle
 
 # Epsilon LP Objective
-LP_eps_3 += em_offset_fcv - em_compressor_3 - em_electrolyzer_3, 'Offset_3'
+LP_eps_3 += em_offset_fcv - em_compressor_3 - em_electrolyzer_3 - em_sbg_3, 'Offset_3'
 LP_eps_3.solve()
 print(LP_eps_3.status)
 offset_max_3 = LP_eps_3.objective.value()
@@ -226,14 +251,40 @@ LP_cost_3 += pulp.lpSum((E_3[str(n)] + \
                     ECF_prestorage * H2_tank_in_3[str(n)]) * (HOEP[n] + TC) for n in input_df.index) + \
         pulp.lpSum(H2_3[str(n)] * C_H2O * WCR for n in input_df.index) == OPEX_3
 
-# percentage of maximum aemission offset
+# percentage of maximum emission offset
 # This is going to be the contraint in the cost minimization
 phi = 0.8
 
 # Cost LP Objective
-LP_cost_3 += em_offset_fcv - em_compressor_3 - em_electrolyzer_3 == em_offset_3
+LP_cost_3 += em_offset_fcv - em_compressor_3 - em_electrolyzer_3 -em_sbg_3 == em_offset_3
 LP_cost_3 += em_offset_3 >= phi * offset_max_3
 LP_cost_3 += CAPEX_3 + OPEX_3 * TVM, 'Cost_3'
+
+
+#Estimating the time taken to solve this optimzation problem 
+#start time 
+start_time_cost = time.time()
+
+print(start_time_cost)
+
 LP_cost_3.solve()
+
+
 print(LP_cost_3.status)
 
+end_time_cost = time.time()
+
+#time difference 
+time_difference_cost = end_time_cost - start_time_cost
+
+print(time_difference_cost)
+
+
+
+my_result = create_var_df(LP_cost_3)
+my_result = my_result.append({'variable' : 'LP_cost_status', 'value' : LP_cost_3.status} , ignore_index=True)
+my_result = my_result.append({'variable' : 'LP_cost_time', 'value' : time_difference_cost} , ignore_index=True)
+my_result = my_result.append({'variable' : 'offset_max', 'value' : offset_max_3} , ignore_index=True)
+my_result = my_result.append({'variable' : 'phi', 'value' : phi} , ignore_index=True)
+filename = 'transportation_result'
+export_to_csv(my_result,filename)
