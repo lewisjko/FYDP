@@ -1,12 +1,33 @@
+'''
+Model for Industry
+'''
 import pulp
 import pandas as pd
+import time
+
+'''
+Functions for creating variable df and exporting as a csv file 
+'''
+def create_var_df(LP_object):
+    variable_tuple = [(v.name,v.varValue) for v in LP_object.variables()]
+    
+    variable_df = pd.DataFrame(data=variable_tuple,columns=['variable','value'])
+    
+    return variable_df
+
+def export_to_csv(df,filename):
+    df.to_csv(filename+'.csv')
+
+
+
 
 # Time-series constants
 SBG = list(input_df['SBG(kWh)']) #kwh
-D = list(input_df['industry_demand(m^3)']) #m^3
+industry_demand = list(input_df['industry_demand(m^3)']) #m^3
 HOEP = list(input_df['HOEP']) #$/kwh
+EMF = list(input_df['EMF(tonne/kWh)'])
 
-# Fixed constants for other models
+# Fixed constants for other models 
 nu_electrolyzer = var['value']['electrolyzer_eff'] #dimensionless
 E_HHV_H2 = var['value']['E_hhv_h2'] #kwh/m^3
 nu_reactor = var['value']['meth_reactor_eff'] #dimensionless
@@ -16,6 +37,7 @@ HHV_NG = var['value']['HHV_NG'] #MMBtu/kmol
 E_electrolyzer_min = var['value']['min_E_cap'] #kwh
 E_electrolyzer_max = var['value']['max_E_cap'] #kwh
 tau = 0.50
+
 
 EMF_NG = var['value']['EMF_NG'] #tonne CO2/m^3 H2
 EMF_comb = var['value']['EMF_combRNG'] #tonne CO2 /m^3 H2
@@ -39,14 +61,18 @@ OPEX_upgrading = var['value']['OPEX_upgrading'] #$/m^3 reactor capacity
 TVM = var['value']['TVM']
 
 
-# Fixed constants for industry models 
 
+# Fixed constants for transportation models 
+Imax = var['value']['Imax'] #kmol
+Imin= var['value']['Imin'] #kmol
 Fmax_booster = var['value']['Fmax_booster'] #kmol
-
+Fmax_prestorage =var['value']['Fmax_prestorage'] #kmol
 
 CAPEX_booster = var['value']['CAPEX_booster'] #$
 CAPEX_prestorage = var['value']['CAPEX_prestorage'] #$
+CAPEX_tank = var['value']['CAPEX_tank'] #$
 
+ECF_prestorage = var['value']['ECF_prestorage'] #kWh/kmol H2 
 
 z_booster = var['value']['z_booster'] #compressibility factor for booster compressor 
 R = var['value']['R'] #kJ/kmolK
@@ -62,35 +88,39 @@ ECF_booster = z_booster * R * T * N_stage_booster / comp_efficiency * \
                 (((P_out_booster / P_in_booster) ** ((heat_cap_ratio - 1) / N_stage_booster / heat_cap_ratio ))-1) \
                 / 3600 #converting kJ to kWh ECF booster in kWh/kmol
             
-
 #converting the transportation constants to m^3 
 MW_H2 = var['value']['MW_H2'] #kg/kmol H2
 density_H2 = var['value']['density_H2'] #kg/m^3
 
+Imax = Imax * MW_H2 / density_H2 # m^3
+Imin = Imin * MW_H2 / density_H2 # m^3
 
-Fmax_booster = Fmax_booster * MW_H2 / density_H2 # m^3
-
-
-
-ECF_booster = ECF_booster / MW_H2 * density_H2 #kWh/m^3
+Fmax_prestorage = Fmax_prestorage * MW_H2 / density_H2 # m^3
+ECF_prestorage = ECF_prestorage / MW_H2 * density_H2 #kWh/m^3
 
 EMF_SMR=EMF_SMR*0.001/MW_H2*density_H2 #tonne CO2/m^3 of H2
 
-
 #number of electrolyzer max
-N_electrolyzer_max = int(5000)
+N_electrolyzer_max = int(10000)
 
 
 
 # Transportation model
-LP_4 = pulp.LpProblem('LP', pulp.LpMinimize)
+LP_eps_4 = pulp.LpProblem('LP_eps_4', pulp.LpMaximize)
+LP_cost_4 = pulp.LpProblem('LP_cost_4', pulp.LpMinimize)
 
 
 N_electrolyzer_4 = pulp.LpVariable('N_electrolyzer_4',
                           lowBound=0,
                           cat='Integer')
 
-N_booster_4 = pulp.LpVariable('N_booster_4',
+
+
+N_prestorage_4 = pulp.LpVariable('N_prestorage_4',
+                          lowBound=0,
+                          cat='Integer')
+
+N_tank_4 = pulp.LpVariable('N_tank_4',
                           lowBound=0,
                           cat='Integer')
 
@@ -109,58 +139,143 @@ H2_4 = pulp.LpVariable.dicts('H2_4',
                           [str(i) for i in input_df.index],
                           lowBound=0,
                           cat='Continuous')
-em_offset_max_4 = pulp.LpVariable('em_offset_max_4',
-                          lowBound=0,
-                          cat='Continuous')
-em_old = pulp.LpVariable('em_old',
-                          lowBound=0,
-                          cat='Continuous')
-em_ind = pulp.LpVariable('em_ind',
+
+#hydrogen delivered directly to the booster compressor 
+H2_direct_4 = pulp.LpVariable.dicts('H2_direct_4',
+                          [str(i) for i in input_df.index],
                           lowBound=0,
                           cat='Continuous')
 
-CAPEX_4 = pulp.LpVariable('CAPEX_4', cat='Continuous')
-OPEX_4 = pulp.LpVariable('OPEX_4', cat='Continuous')
+#hydrogen going into the tank 
+H2_tank_in_4 = pulp.LpVariable.dicts('H2_tank_in_4',
+                          [str(i) for i in input_df.index],
+                          lowBound=0,
+                          cat='Continuous')
+#hydrogen leaving the tank
+H2_tank_out_4 = pulp.LpVariable.dicts('H2_tank_out_4',
+                          [str(i) for i in input_df.index],
+                          lowBound=0,
+                          cat='Continuous')
 
-for i, h in enumerate([str(i) for i in input_df.index]):
-    # Energy and flow constraints
-    LP_4 += H2_4[h] == nu_electrolyzer * E_4[h] / E_HHV_H2
+#hydrogen inventory in the tank
+I_H2_4 = pulp.LpVariable.dicts('I_H2_4',
+                          [str(i) for i in input_df.index],
+                          lowBound=0,
+                          cat='Continuous')
 
-    # Demand constraint
-    # Actual H2 Demand is 0.05 of total industrial demand
-    LP_4 += H2_4[h] == D[i]
+em_offset_4 = pulp.LpVariable('em_offset_4',
+                          lowBound=0,
+                          cat='Continuous')
+em_compressor_4 = pulp.LpVariable('em_compressor_4',
+                          lowBound=0,
+                          cat='Continuous')
+em_electrolyzer_4 = pulp.LpVariable('em_electrolyzer_4',
+                          lowBound=0,
+                          cat='Continuous')
+em_before = pulp.LpVariable('em_before',
+                          lowBound=0,
+                          cat='Continuous')
+em_sbg_4 = pulp.LpVariable('em_sbg_4',
+                          lowBound=0,
+                          cat='Continuous')
 
-    # Electrolyzer constraints
+CAPEX_4 = pulp.LpVariable('CAPEX_4', lowBound=0, cat='Continuous')
+OPEX_4 = pulp.LpVariable('OPEX_4', lowBound=0, cat='Continuous')
+
+for LP_4 in [LP_eps_4, LP_cost_4]:
+    for i, h in enumerate([str(i) for i in input_df.index]):
+
+        # Energy and flow constraints
+        LP_4 += H2_4[h] == nu_electrolyzer * E_4[h] / E_HHV_H2
+        LP_4 += H2_4[h] == H2_tank_in_4[h] + H2_direct_4[h] 
+
+        #hydrogen storage inventory constraint 
+        if h == '0': 
+            LP_4 += I_H2_4[h] == Imin * N_tank_4 + H2_tank_in_4[h] - H2_tank_out_4[h]
+        else: 
+            LP_4 += I_H2_4[h] == I_H2_4[str(i-1)] + H2_tank_in_4[h] - H2_tank_out_4[h]
+
+        # Demand constraint
+        LP_4 += H2_tank_out_4[h] + H2_direct_4[h] == industry_demand[i] 
+
+        # Electrolyzer constraints 
+        LP_4 += N_electrolyzer_4 * E_electrolyzer_min <= E_4[h]
+        LP_4 += N_electrolyzer_4 * E_electrolyzer_max >= E_4[h]
+        LP_4 += E_4[h] <= SBG[i]
+
+        #storage inventory constraint 
+        LP_4 += I_H2_4[h] <= Imax * N_tank_4  
+        LP_4 += I_H2_4[h] >= Imin * N_tank_4
+
+        #compressor capacity constraint
+        LP_4 += H2_tank_in_4[h] <= N_prestorage_4 * Fmax_prestorage
     
-    LP_4 += N_electrolyzer_4 * E_electrolyzer_min <= E_4[h]
-    LP_4 += N_electrolyzer_4 * E_electrolyzer_max >= E_4[h]
-    LP_4 += E_4[h] <= SBG[i]
+    #Number of eletrolyzer constraint 
+    LP_4 += pulp.lpSum(n * alpha_4[str(n)] for n in range(1, N_electrolyzer_max+1)) == N_electrolyzer_4
+    LP_4 += pulp.lpSum(alpha_4) <= 1
     
+    #Emission constraints
+    LP_4 += pulp.lpSum(EMF_SMR * industry_demand[h] for h in input_df.index) == em_before
     
-    if h == '0':
-        LP_4 += pulp.lpSum(n * alpha_4[str(n)] for n in range(1, N_electrolyzer_max+1)) == N_electrolyzer_4
-        LP_4 += pulp.lpSum(alpha_4) <= 1
+    #Emission calculation 
+    LP_4 += pulp.lpSum(EMF[n] * (ECF_prestorage * H2_tank_in_4[str(n)]) for n in input_df.index)  == em_compressor_4
+    
+    LP_4 += pulp.lpSum(EMF_electrolyzer * H2_4[h] for h in [str(x) for x in input_df.index]) == em_electrolyzer_4
+    LP_4 += pulp.lpSum(EMF[int(h)] * (E_4[h]) for h in [str(x) for x in input_df.index]) == em_sbg_4
+    
 
-#Emission
-LP_4 += pulp.lpSum(EMF_SMR*D[h] for h in input_df.index)==em_old
-LP_4 +=pulp.lpSum(EMF_avg*E_4[h]+EMF_electrolyzer*H2_4[h] for h in [str(x) for x in input_df.index])==em_ind
-LP_4 +=em_old-em_ind==em_offset_max_4
-     
-#Compressor Capacity Constraint   
-LP_4 += H2_4[h] <= N_booster_4 * Fmax_booster
-        
-# CAPEX (electrolyzer+Booster pump)
+    
+# Objectives
+LP_eps_4 += em_before - em_compressor_4 - em_electrolyzer_4 - em_sbg_4
+LP_eps_4.solve()
+print(LP_eps_4.status)
+offset_max_4 = LP_eps_4.objective.value()
+
+# Cost of electrolyzer list
 C_electrolyzer = [beta * C_0 * i ** mu for i in range(1, N_electrolyzer_max+1)]
-LP_4 += (pulp.lpSum(alpha_4[str(n)] * C_electrolyzer[n - 1] for n in range(1, N_electrolyzer_max+1))+\
-                   N_booster_4*CAPEX_booster)*TVM == CAPEX_4
 
-# OPEX (+electericity consumed by running electrolyzer and booster)
-LP_4 += pulp.lpSum((E_4[str(n)]+ECF_booster* (H2_4[str(n)])) * (HOEP[n] + TC) for n in input_df.index) + \
-      pulp.lpSum(H2_4[str(n)] * C_H2O * WCR for n in input_df.index) == OPEX_4
+# CAPEX
+LP_cost_4 += pulp.lpSum(alpha_4[str(n)] * C_electrolyzer[n - 1] for n in range(1, N_electrolyzer_max+1)) + \
+        (N_prestorage_4 * CAPEX_prestorage + \
+        N_tank_4 * CAPEX_tank) * 20 == CAPEX_4
 
-# Objective
-LP_4 += CAPEX_4 + OPEX_4 * TVM, 'Cost_4'
 
-LP_4.solve()
-print([x.varValue for x in LP_4.variables()])
-print(pulp.value(LP_4.objective))
+LP_cost_4 += pulp.lpSum((E_4[str(n)] + \
+                    ECF_prestorage * H2_tank_in_4[str(n)]) * (HOEP[n] + TC) for n in input_df.index) + \
+        pulp.lpSum(H2_4[str(n)] * C_H2O * WCR for n in input_df.index) == OPEX_4
+
+
+phi = 0.8
+
+
+LP_cost_4 += em_before - em_compressor_4 - em_electrolyzer_4 - em_sbg_4 == em_offset_4
+LP_cost_4 += em_offset_4 >= phi * offset_max_4
+LP_cost_4 += CAPEX_4 + OPEX_4 * TVM, 'Cost_4'
+
+
+#Estimating the time taken to solve this optimzation problem 
+#start time 
+start_time_cost = time.time()
+
+print(start_time_cost)
+
+LP_cost_4.solve()
+
+print(LP_cost_4.status)
+
+end_time_cost = time.time()
+
+#time difference 
+time_difference_cost = end_time_cost - start_time_cost
+
+print(time_difference_cost)
+
+
+my_result = create_var_df(LP_cost_4)
+my_result = my_result.append({'variable' : 'LP_cost_status', 'value' : LP_cost_4.status} , ignore_index=True)
+my_result = my_result.append({'variable' : 'LP_cost_time', 'value' : time_difference_cost} , ignore_index=True)
+my_result = my_result.append({'variable' : 'offset_max', 'value' : offset_max_4} , ignore_index=True)
+my_result = my_result.append({'variable' : 'phi', 'value' : phi} , ignore_index=True)
+filename = 'industry_result'
+export_to_csv(my_result,filename)
+
