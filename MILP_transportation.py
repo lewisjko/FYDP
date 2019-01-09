@@ -93,7 +93,7 @@ ECF_prestorage = ECF_prestorage / MW_H2 * density_H2 #kWh/m^3
 
 
 #number of electrolyzer max
-N_electrolyzer_max = int(10000)
+N_electrolyzer_max = int(3510)
 
 
 # LP objective variable for transportation model
@@ -253,7 +253,7 @@ LP_cost_3 += pulp.lpSum((E_3[str(n)] + \
 
 # percentage of maximum emission offset
 # This is going to be the contraint in the cost minimization
-phi = 0.8
+phi = 0.5
 
 # Cost LP Objective
 LP_cost_3 += em_offset_fcv - em_compressor_3 - em_electrolyzer_3 -em_sbg_3 == em_offset_3

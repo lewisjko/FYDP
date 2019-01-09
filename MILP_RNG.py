@@ -2,7 +2,27 @@
 Model for RNG/NG
 """
 
+
+'''
+Functions for creating variable df and exporting as a csv file 
+'''
+def create_var_df(LP_object):
+    variable_tuple = [(v.name,v.varValue) for v in LP_object.variables()]
+    
+    variable_df = pd.DataFrame(data=variable_tuple,columns=['variable','value'])
+    
+    return variable_df
+
+def export_to_csv(df,filename):
+    df.to_csv(filename+'.csv')
+
+
+
 import pulp
+import pandas as pd
+import time 
+from numpy import count_nonzero
+
 
 # Time-series constants
 SBG = list(input_df['SBG(kWh)'])
@@ -11,13 +31,17 @@ HOEP = list(input_df['HOEP'])
 EMF = list(input_df['EMF(tonne/kWh)'])
 
 # Fixed constants
-N_max = 30000
+N_max = 3510
+N_max += 1
 nu_electrolyzer = var['value']['electrolyzer_eff']
 E_HHV_H2 = var['value']['E_hhv_h2']
 nu_reactor = var['value']['meth_reactor_eff']
 HHV_H2 = var['value']['HHV_H2']
 HHV_NG = var['value']['HHV_NG']
-CO2_available = var['value']['CO2_available']
+
+CO2_available_total = var['value']['CO2_total'] # m^3
+CO2_available = float(CO2_available_total) / count_nonzero(SBG)
+
 E_electrolyzer_min = var['value']['min_E_cap']
 E_electrolyzer_max = var['value']['max_E_cap']
 tau = 0.50
@@ -48,11 +72,21 @@ I_min= var['value']['Imin'] # kmol
 F_max_booster = var['value']['Fmax_booster'] # kmol
 F_max_prestorage =var['value']['Fmax_prestorage'] # kmol
 
-CAPEX_booster = var['value']['CAPEX_booster'] # $
 CAPEX_prestorage = var['value']['CAPEX_prestorage'] # $
 CAPEX_tank = var['value']['CAPEX_tank'] # $
 
 ECF_prestorage = var['value']['ECF_prestorage'] # kWh/kmol H2
+
+
+# Unit Conversions   
+#converting the transportation constants to m^3 
+MW_H2 = var['value']['MW_H2'] #kg/kmol H2
+density_H2 = var['value']['density_H2'] #kg/m^3
+Imax = Imax * MW_H2 / density_H2 # m^3
+Imin = Imin * MW_H2 / density_H2 # m^3
+Fmax_prestorage = Fmax_prestorage * MW_H2 / density_H2 # m^3
+ECF_prestorage = ECF_prestorage / MW_H2 * density_H2 #kWh/m^3
+
 
 # RNG model
 LP_eps = pulp.LpProblem('LP_eps', pulp.LpMaximize)
@@ -131,7 +165,7 @@ for LP in [LP_eps, LP_cost]:
         # Energy and flow constraints
         if h == '0':
             LP += RNG_max <= CO2_available
-        LP += H2_direct[h] + H2_tank_in[h] == nu_electrolyzer * E_1[h] * E_HHV_H2 ** -1
+        LP += H2_direct[h] + H2_tank_in[h] == nu_electrolyzer * E_1[h] * E_HHV_H2 ** (-1)
         LP += RNG[h] == nu_reactor * (H2_direct[h] + H2_tank_out[h]) * HHV_H2 / HHV_NG
         LP += CO2[h] == RNG[h]
         
@@ -181,14 +215,39 @@ LP_cost += pulp.lpSum(alpha_1[str(n)] * C_electrolyzer[n - 1] for n in range(1, 
 LP_cost += pulp.lpSum(CO2[str(n)] * C_CO2 for n in input_df.index) + \
            pulp.lpSum(E_1[str(n)] * (HOEP[n] + TC) for n in input_df.index) + \
            pulp.lpSum((H2_direct[str(n)] + H2_tank_in[str(n)]) * C_H2O * WCR for n in input_df.index) + \
-           pulp.lpSum(ECF_prestorage * H2_tank_in[str(n)] for n in input_df.index) + \
+           pulp.lpSum((ECF_prestorage * H2_tank_in[str(n)])* (HOEP[n] + TC) for n in input_df.index) + \
            OPEX_upgrading * RNG_max == OPEX_1
 
 # Objectives
-phi = 0.80
+phi = 0.5
 LP_cost += em_ng - em_rng == em_offset_1
 LP_cost += em_offset_1 >= phi * offset_max_1
 LP_cost += CAPEX_1 + OPEX_1 * TVM, 'Cost_1'
 
+
+#Estimating the time taken to solve this optimzation problem 
+#start time 
+start_time_cost = time.time()
+
+print(start_time_cost)
+
 LP_cost.solve()
+
 print(LP_cost.status)
+
+end_time_cost = time.time()
+
+#time difference 
+time_difference_cost = end_time_cost - start_time_cost
+
+print(time_difference_cost)
+
+
+
+my_result = create_var_df(LP_cost)
+my_result = my_result.append({'variable' : 'LP_cost_status', 'value' : LP_cost.status} , ignore_index=True)
+my_result = my_result.append({'variable' : 'LP_cost_time', 'value' : time_difference_cost} , ignore_index=True)
+my_result = my_result.append({'variable' : 'offset_max', 'value' : offset_max_1} , ignore_index=True)
+my_result = my_result.append({'variable' : 'phi', 'value' : phi} , ignore_index=True)
+filename = 'RNG_result'
+export_to_csv(my_result,filename)

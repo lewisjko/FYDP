@@ -3,6 +3,23 @@ Model for HENG
 """
 
 import pulp
+import pandas as pd
+import time
+
+'''
+Functions for creating variable df and exporting as a csv file 
+'''
+def create_var_df(LP_object):
+    variable_tuple = [(v.name,v.varValue) for v in LP_object.variables()]
+    
+    variable_df = pd.DataFrame(data=variable_tuple,columns=['variable','value'])
+    
+    return variable_df
+
+def export_to_csv(df,filename):
+    df.to_csv(filename+'.csv')
+
+
 
 # Time-series constants
 SBG = list(input_df['SBG(kWh)'])
@@ -11,7 +28,8 @@ HOEP = list(input_df['HOEP'])
 EMF = list(input_df['EMF(tonne/kWh)'])
 
 # Fixed constants
-N_max = 30000
+N_max = 3510
+N_max += 1
 nu_electrolyzer = var['value']['electrolyzer_eff']
 E_HHV_H2 = var['value']['E_hhv_h2']
 E_electrolyzer_min = var['value']['min_E_cap']
@@ -41,12 +59,25 @@ CAPEX_tank = var['value']['CAPEX_tank'] # $
 
 ECF_prestorage = var['value']['ECF_prestorage'] # kWh/kmol H2
 
+
+
+# Unit Conversions   
+#converting the transportation constants to m^3 
+MW_H2 = var['value']['MW_H2'] #kg/kmol H2
+density_H2 = var['value']['density_H2'] #kg/m^3
+Imax = Imax * MW_H2 / density_H2 # m^3
+Imin = Imin * MW_H2 / density_H2 # m^3
+Fmax_prestorage = Fmax_prestorage * MW_H2 / density_H2 # m^3
+ECF_prestorage = ECF_prestorage / MW_H2 * density_H2 #kWh/m^3
+
+
+
 # HENG model
 LP_cost = pulp.LpProblem('LP_cost', pulp.LpMinimize)
 LP_eps = pulp.LpProblem('LP_eps', pulp.LpMaximize)
 N_electrolyzer_2 = pulp.LpVariable('N_electrolyzer_2',
                           lowBound=0,
-                          cat='Continuous')
+                          cat='Integer')
 alpha_2 = pulp.LpVariable.dicts('alpha_2',
                           [str(i) for i in range(1, N_max)],
                           cat='Binary')
@@ -102,13 +133,13 @@ I_H2 = pulp.LpVariable.dicts('I_H2',
                           lowBound=0,
                           cat='Continuous')
 
-CAPEX_2 = pulp.LpVariable('CAPEX_2', cat='Continuous')
-OPEX_2 = pulp.LpVariable('OPEX_2', cat='Continuous')
+CAPEX_2 = pulp.LpVariable('CAPEX_2', lowBound=0, cat='Continuous')
+OPEX_2 = pulp.LpVariable('OPEX_2', lowBound=0, cat='Continuous')
 
 for LP in [LP_eps, LP_cost]:
     for i, h in enumerate([str(i) for i in input_df.index]):
         # Energy and flow constraints
-        LP += H2_direct[h] + H2_tank_in[h] == nu_electrolyzer * E_2[h] * E_HHV_H2 ** -1
+        LP += H2_direct[h] + H2_tank_in[h] == nu_electrolyzer * E_2[h] * E_HHV_H2 ** (-1)
         
         # Hydrogen storage tank constraint
         if h == '0':
@@ -137,9 +168,9 @@ for LP in [LP_eps, LP_cost]:
     LP += pulp.lpSum(EMF_NG * D[h] for h in input_df.index) == em_ng
 
 # Eps Objective
-LP_eps += em_ng - em_heng, 'max offset'
+LP_eps += em_ng - em_heng, 'Offset_2'
 LP_eps.solve()
-offset_max = LP_eps.objective.value()
+offset_max_2 = LP_eps.objective.value()
 print(LP_eps.status)
 
 # CAPEX
@@ -150,13 +181,39 @@ LP_cost += pulp.lpSum(alpha_2[str(n)] * C_electrolyzer[n - 1] for n in range(1, 
 # OPEX
 LP_cost += pulp.lpSum(E_2[str(n)] * (HOEP[n] + TC) for n in input_df.index) + \
            pulp.lpSum((H2_direct[str(n)] + H2_tank_in[str(n)]) * C_H2O * WCR for n in input_df.index) + \
-           pulp.lpSum(ECF_prestorage * H2_tank_in[str(n)] for n in input_df.index) == OPEX_2
+           pulp.lpSum((ECF_prestorage * H2_tank_in[str(n)])* (HOEP[n] + TC) for n in input_df.index) == OPEX_2
 
 # Objectives
-phi = 0.80
+phi = 0.5
 LP_cost += em_ng - em_heng == em_offset_2
-LP_cost += em_offset_2 >= phi * offset_max
-LP_cost += CAPEX_2 + OPEX_2, 'Cost_2'
+LP_cost += em_offset_2 >= phi * offset_max_2
+LP_cost += CAPEX_2 + OPEX_2 * TVM, 'Cost_2'
+
+
+#Estimating the time taken to solve this optimzation problem 
+#start time 
+start_time_cost = time.time()
+
+print(start_time_cost)
 
 LP_cost.solve()
+
 print(LP_cost.status)
+
+end_time_cost = time.time()
+
+#time difference 
+time_difference_cost = end_time_cost - start_time_cost
+
+print(time_difference_cost)
+
+
+
+my_result = create_var_df(LP_cost)
+my_result = my_result.append({'variable' : 'LP_cost_status', 'value' : LP_cost.status} , ignore_index=True)
+my_result = my_result.append({'variable' : 'LP_cost_time', 'value' : time_difference_cost} , ignore_index=True)
+my_result = my_result.append({'variable' : 'offset_max', 'value' : offset_max_2} , ignore_index=True)
+my_result = my_result.append({'variable' : 'phi', 'value' : phi} , ignore_index=True)
+filename = 'HENG_result'
+export_to_csv(my_result,filename)
+

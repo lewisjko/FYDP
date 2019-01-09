@@ -20,7 +20,6 @@ def export_to_csv(df,filename):
 
 
 
-
 # Time-series constants
 SBG = list(input_df['SBG(kWh)']) #kwh
 industry_demand = list(input_df['industry_demand(m^3)']) #m^3
@@ -101,7 +100,7 @@ ECF_prestorage = ECF_prestorage / MW_H2 * density_H2 #kWh/m^3
 EMF_SMR=EMF_SMR*0.001/MW_H2*density_H2 #tonne CO2/m^3 of H2
 
 #number of electrolyzer max
-N_electrolyzer_max = int(10000)
+N_electrolyzer_max = int(3510)
 
 
 
@@ -226,7 +225,7 @@ for LP_4 in [LP_eps_4, LP_cost_4]:
 
     
 # Objectives
-LP_eps_4 += em_before - em_compressor_4 - em_electrolyzer_4 - em_sbg_4
+LP_eps_4 += em_before - em_compressor_4 - em_electrolyzer_4 - em_sbg_4, 'Offset_4'
 LP_eps_4.solve()
 print(LP_eps_4.status)
 offset_max_4 = LP_eps_4.objective.value()
@@ -245,7 +244,7 @@ LP_cost_4 += pulp.lpSum((E_4[str(n)] + \
         pulp.lpSum(H2_4[str(n)] * C_H2O * WCR for n in input_df.index) == OPEX_4
 
 
-phi = 0.8
+phi = 0.5
 
 
 LP_cost_4 += em_before - em_compressor_4 - em_electrolyzer_4 - em_sbg_4 == em_offset_4
