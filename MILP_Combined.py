@@ -2,7 +2,24 @@
 Combined model (RNG+HENG+Mobility+Industry)
 """
 
+'''
+Functions for creating variable df and exporting as a csv file 
+'''
+def create_var_df(LP_object):
+    variable_tuple = [(v.name,v.varValue) for v in LP_object.variables()]
+    
+    variable_df = pd.DataFrame(data=variable_tuple,columns=['variable','value'])
+    
+    return variable_df
+
+def export_to_csv(df,filename):
+    df.to_csv(filename+'.csv')
+
+
+
 import pulp
+import pandas as pd
+import time 
 from numpy import count_nonzero
 
 # Time-series constants
@@ -14,14 +31,14 @@ HOEP = list(input_df['HOEP'])
 EMF = list(input_df['EMF(tonne/kWh)'])
 
 # Electrolyzer and flow constants
-N_max = 30000
+N_max = 3510
 N_max += 1
 nu_electrolyzer = var['value']['electrolyzer_eff']
 E_HHV_H2 = var['value']['E_hhv_h2'] # kwh/m^3
 nu_reactor = var['value']['meth_reactor_eff']
 HHV_H2 = var['value']['HHV_H2'] # MMBtu/kmol
 HHV_NG = var['value']['HHV_NG'] # MMBtu/kmol
-CO2_available_total = var['value']['CO2_total'] # m^3/year
+CO2_available_total = var['value']['CO2_total'] # m^3
 CO2_available = float(CO2_available_total) / count_nonzero(SBG)
 E_electrolyzer_min = var['value']['min_E_cap'] # kwh
 E_electrolyzer_max = var['value']['max_E_cap'] # kwh
@@ -346,7 +363,7 @@ LP_cost += (N_tank * CAPEX_tank + N_prestorage * CAPEX_prestorage) * 20 == CAPEX
 # OPEX SBG (electrolyzer + prestorage + tank)
 LP_cost += pulp.lpSum(E[str(n)] * (HOEP[n] + TC) for n in input_df.index) + \
            pulp.lpSum((H2_direct[str(n)] + H2_tank_in[str(n)]) * C_H2O * WCR for n in input_df.index) + \
-           pulp.lpSum(ECF_prestorage * H2_tank_in[str(n)] for n in input_df.index) == OPEX_SBG
+           pulp.lpSum((ECF_prestorage * H2_tank_in[str(n)]) * (HOEP[n] + TC) for n in input_df.index) == OPEX_SBG
 
 # OPEX reactor
 LP_cost += pulp.lpSum(CO2[str(n)] * C_CO2 for n in input_df.index) + \
@@ -356,8 +373,17 @@ LP_cost += pulp.lpSum(CO2[str(n)] * C_CO2 for n in input_df.index) + \
 LP_cost += pulp.lpSum(ECF_booster * H2_3[str(n)] * (HOEP[n] + TC) for n in input_df.index) \
            == OPEX_booster_comp
 
+
 # Cost LP Objective
+
+####################
+####CHANGE PHI VALUE
+
 phi = 0.80
+
+########
+####################
+
 LP_cost += em_ng + em_gas_vehicle + em_smr - \
            (em_rng + em_heng  + em_sbg + em_electrolyzer + em_booster_comp + em_pre_comp) \
            == em_offset
@@ -365,5 +391,36 @@ LP_cost += em_offset >= phi * offset_max
 LP_cost += (CAPEX_electrolyzer + CAPEX_reactor + CAPEX_booster_comp + CAPEX_storage) + \
            (OPEX_reactor + OPEX_booster_comp + OPEX_SBG) * TVM == total_cost
 LP_cost += total_cost, 'Cost'
+
+
+
+#Estimating the time taken to solve this optimzation problem 
+#start time 
+start_time_cost = time.time()
+
+print(start_time_cost)
+
+#Solve LP_cost
 LP_cost.solve()
+
+#end time 
+end_time_cost = time.time()
+
+#time difference 
+time_difference_cost = end_time_cost - start_time_cost
+
+print(time_difference_cost)
 print(LP_cost.status)
+print(phi)
+
+my_result = create_var_df(LP_cost)
+my_result = my_result.append({'variable' : 'LP_cost_status', 'value' : LP_cost.status} , ignore_index=True)
+my_result = my_result.append({'variable' : 'LP_cost_time', 'value' : time_difference_cost} , ignore_index=True)
+my_result = my_result.append({'variable' : 'offset_max', 'value' : offset_max} , ignore_index=True)
+my_result = my_result.append({'variable' : 'phi', 'value' : phi} , ignore_index=True)
+filename = 'combined_result_' + str(phi)
+export_to_csv(my_result,filename)
+
+
+
+
