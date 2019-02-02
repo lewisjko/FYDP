@@ -4,13 +4,13 @@ Model for Transportation
 
 
 '''
-Functions for creating variable df and exporting as a csv file 
+Functions for creating variable df and exporting as a csv file
 '''
 def create_var_df(LP_object):
     variable_tuple = [(v.name,v.varValue) for v in LP_object.variables()]
-    
+
     variable_df = pd.DataFrame(data=variable_tuple,columns=['variable','value'])
-    
+
     return variable_df
 
 def export_to_csv(df,filename):
@@ -20,7 +20,7 @@ def export_to_csv(df,filename):
 
 import pulp
 import pandas as pd
-import time 
+import time
 
 # Time-series constants
 SBG = list(input_df['SBG(kWh)']) #kwh
@@ -35,17 +35,17 @@ HHV_H2 = var['value']['HHV_H2'] #MMBtu/kmol
 E_electrolyzer_min = var['value']['min_E_cap'] #kwh
 E_electrolyzer_max = var['value']['max_E_cap'] #kwh
 
-#Emission factor of electrolyzer and gasoline vehicle 
+#Emission factor of electrolyzer and gasoline vehicle
 EMF_electrolyzer = var['value']['EMF_electrolyzer']
 EMF_vehicle = var['value']['emission_gasoline_v'] #tonne CO2/car/year
 
-#Cost realated constants 
+#Cost realated constants
 beta = var['value']['beta']
 C_0 = var['value']['C_0'] #$/kW
 mu = var['value']['mu']
 gamma = var['value']['gamma']
 TC = var['value']['TC'] #$/kWh
-C_H2O = var['value']['C_H2O'] #$/L 
+C_H2O = var['value']['C_H2O'] #$/L
 WCR = var['value']['water_cons_rate'] #L H2o/m^3 H2
 TVM = var['value']['TVM'] #time money value
 CAPEX_booster = var['value']['CAPEX_booster'] #$/year
@@ -53,32 +53,32 @@ CAPEX_prestorage = var['value']['CAPEX_prestorage'] #$/year
 CAPEX_tank = var['value']['CAPEX_tank'] #$/year
 
 
-#Constants for tank and compressor capacity 
+#Constants for tank and compressor capacity
 Imax = var['value']['Imax'] #kmol
 Imin= var['value']['Imin'] #kmol
 Fmax_booster = var['value']['Fmax_booster'] #kmol
 Fmax_prestorage =var['value']['Fmax_prestorage'] #kmol
 
-#Electricity consumption rate for prestorage 
-ECF_prestorage = var['value']['ECF_prestorage'] #kWh/kmol H2 
+#Electricity consumption rate for prestorage
+ECF_prestorage = var['value']['ECF_prestorage'] #kWh/kmol H2
 
 #Electricity consumption rate for booster compressor - calculated using power equation
-z_booster = var['value']['z_booster'] #compressibility factor for booster compressor 
+z_booster = var['value']['z_booster'] #compressibility factor for booster compressor
 R = var['value']['R'] #kJ/kmolK
 T = var['value']['T'] #K
-comp_efficiency = var['value']['comp_efficiency']  #isentropic compressor efficiency 
-heat_cap_ratio = var['value']['heat_cap_ratio'] #heat capacaity ratio of hydrogen 
+comp_efficiency = var['value']['comp_efficiency']  #isentropic compressor efficiency
+heat_cap_ratio = var['value']['heat_cap_ratio'] #heat capacaity ratio of hydrogen
 P_in_booster = var['value']['P_in_booster'] #inlet pressure of booster compressor
-P_out_booster = var['value']['P_out_booster'] #outlet pressure of booster compressor 
+P_out_booster = var['value']['P_out_booster'] #outlet pressure of booster compressor
 N_stage_booster = var['value']['N_stage_booster']
 
 ECF_booster = z_booster * R * T * N_stage_booster / comp_efficiency * \
                 heat_cap_ratio / (heat_cap_ratio - 1) * \
                 (((P_out_booster / P_in_booster) ** ((heat_cap_ratio - 1) / N_stage_booster / heat_cap_ratio ))-1) \
                 / 3600 #converting kJ to kWh ECF booster in kWh/kmol
-            
-            
-#converting the transportation constants to m^3 
+
+
+#converting the transportation constants to m^3
 MW_H2 = var['value']['MW_H2'] #kg/kmol H2
 density_H2 = var['value']['density_H2'] #kg/m^3
 
@@ -133,13 +133,13 @@ H2_3 = pulp.LpVariable.dicts('H2_3',
                           lowBound=0,
                           cat='Continuous')
 
-#hydrogen delivered directly to the booster compressor 
+#hydrogen delivered directly to the booster compressor
 H2_direct_3 = pulp.LpVariable.dicts('H2_direct_3',
                           [str(i) for i in input_df.index],
                           lowBound=0,
                           cat='Continuous')
 
-#hydrogen going into the tank 
+#hydrogen going into the tank
 H2_tank_in_3 = pulp.LpVariable.dicts('H2_tank_in_3',
                           [str(i) for i in input_df.index],
                           lowBound=0,
@@ -156,7 +156,7 @@ I_H2_3 = pulp.LpVariable.dicts('I_H2_3',
                           lowBound=0,
                           cat='Continuous')
 
-#compressor emission 
+#compressor emission
 em_compressor_3 = pulp.LpVariable('em_compressor_3',
                           lowBound=0,
                           cat='Continuous')
@@ -183,50 +183,50 @@ CAPEX_3 = pulp.LpVariable('CAPEX_3', lowBound=0, cat='Continuous')
 OPEX_3 = pulp.LpVariable('OPEX_3', lowBound=0, cat='Continuous')
 
 # This for loop creates two stage - the first stage is minimizing the emission offset
-# The second stage is minimizing the total cost 
+# The second stage is minimizing the total cost
 for LP in [LP_eps_3,LP_cost_3]:
     for i, h in enumerate([str(i) for i in input_df.index]):
 
         # Energy and flow constraints
         LP += H2_3[h] == nu_electrolyzer * E_3[h] / E_HHV_H2
-        LP += H2_3[h] == H2_tank_in_3[h] + H2_direct_3[h] 
+        LP += H2_3[h] == H2_tank_in_3[h] + H2_direct_3[h]
 
-        #hydrogen storage inventory constraint 
+        #hydrogen storage inventory constraint
         if h == '0': #at hour zero, accumulation assumed to be Imin*Ntank
             LP += I_H2_3[h] == Imin * N_tank_3 + H2_tank_in_3[h] - H2_tank_out_3[h]
         else: #at hour non zero accumulation exists from the previous hour
             LP += I_H2_3[h] == I_H2_3[str(i-1)] + H2_tank_in_3[h] - H2_tank_out_3[h]
 
         #Demand constraint
-        LP += H2_tank_out_3[h] + H2_direct_3[h] == mobility_demand[i] 
+        LP += H2_tank_out_3[h] + H2_direct_3[h] <= mobility_demand[i]
 
-        #Electrolyzer constraints 
+        #Electrolyzer constraints
         LP += N_electrolyzer_3 * E_electrolyzer_min <= E_3[h]
         LP += N_electrolyzer_3 * E_electrolyzer_max >= E_3[h]
         LP += E_3[h] <= SBG[i]
-        
-        #storage inventory constraint 
+
+        #storage inventory constraint
         LP += I_H2_3[h] <= Imax * N_tank_3
         LP += I_H2_3[h] >= Imin * N_tank_3
-        
+
         #compressor capacity constraint
         LP += H2_tank_in_3[h] <= N_prestorage_3 * Fmax_prestorage
         LP += H2_tank_out_3[h] + H2_direct_3[h] <= N_booster_3 * Fmax_booster
-        
-    #Number of eletrolyzer constraint 
+
+    #Number of eletrolyzer constraint
     LP += pulp.lpSum(n * alpha_3[str(n)] for n in range(1, N_electrolyzer_max+1)) == N_electrolyzer_3
     LP += pulp.lpSum(alpha_3) <= 1
-     
-    #Emission calculation 
+
+    #Emission calculation
     LP += pulp.lpSum(EMF[n] * (ECF_booster * (H2_tank_out_3[str(n)] + H2_direct_3[str(n)]) + \
                     ECF_prestorage * H2_tank_in_3[str(n)]) for n in input_df.index)  == em_compressor_3
-    
+
 
     LP += pulp.lpSum(EMF_electrolyzer * H2_3[h] for h in [str(x) for x in input_df.index]) == em_electrolyzer_3
     LP += pulp.lpSum(EMF[int(h)] * (E_3[h]) for h in [str(x) for x in input_df.index]) == em_sbg_3
-    
 
-    
+
+
 #emission offset by FCV is emission offset due to replacing gasoline vehicle
 em_offset_fcv = 100000 * EMF_vehicle
 
@@ -245,7 +245,7 @@ LP_cost_3 += pulp.lpSum(alpha_3[str(n)] * C_electrolyzer[n - 1] for n in range(1
         N_prestorage_3 * CAPEX_prestorage + \
         N_tank_3 * CAPEX_tank) * 20 == CAPEX_3
 
-# OPEX 
+# OPEX
 LP_cost_3 += pulp.lpSum((E_3[str(n)] + \
                     ECF_booster * (H2_tank_out_3[str(n)] + H2_direct_3[str(n)]) + \
                     ECF_prestorage * H2_tank_in_3[str(n)]) * (HOEP[n] + TC) for n in input_df.index) + \
@@ -261,8 +261,8 @@ LP_cost_3 += em_offset_3 >= phi * offset_max_3
 LP_cost_3 += CAPEX_3 + OPEX_3 * TVM, 'Cost_3'
 
 
-#Estimating the time taken to solve this optimzation problem 
-#start time 
+#Estimating the time taken to solve this optimzation problem
+#start time
 start_time_cost = time.time()
 
 print(start_time_cost)
@@ -274,7 +274,7 @@ print(LP_cost_3.status)
 
 end_time_cost = time.time()
 
-#time difference 
+#time difference
 time_difference_cost = end_time_cost - start_time_cost
 
 print(time_difference_cost)
