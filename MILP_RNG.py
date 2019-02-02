@@ -4,13 +4,13 @@ Model for RNG/NG
 
 
 '''
-Functions for creating variable df and exporting as a csv file 
+Functions for creating variable df and exporting as a csv file
 '''
 def create_var_df(LP_object):
     variable_tuple = [(v.name,v.varValue) for v in LP_object.variables()]
-    
+
     variable_df = pd.DataFrame(data=variable_tuple,columns=['variable','value'])
-    
+
     return variable_df
 
 def export_to_csv(df,filename):
@@ -20,7 +20,7 @@ def export_to_csv(df,filename):
 
 import pulp
 import pandas as pd
-import time 
+import time
 from numpy import count_nonzero
 
 
@@ -78,8 +78,8 @@ CAPEX_tank = var['value']['CAPEX_tank'] # $
 ECF_prestorage = var['value']['ECF_prestorage'] # kWh/kmol H2
 
 
-# Unit Conversions   
-#converting the transportation constants to m^3 
+# Unit Conversions
+#converting the transportation constants to m^3
 MW_H2 = var['value']['MW_H2'] #kg/kmol H2
 density_H2 = var['value']['density_H2'] #kg/m^3
 Imax = Imax * MW_H2 / density_H2 # m^3
@@ -163,19 +163,19 @@ OPEX_1 = pulp.LpVariable('OPEX_1', lowBound=0, cat='Continuous')
 for LP in [LP_eps, LP_cost]:
     for i, h in enumerate([str(i) for i in input_df.index]):
         # Energy and flow constraints
-        if h == '0':
-            LP += RNG_max <= CO2_available
+#        if h == '0':
+#            LP += RNG_max <= CO2_available
         LP += H2_direct[h] + H2_tank_in[h] == nu_electrolyzer * E_1[h] * E_HHV_H2 ** (-1)
         LP += RNG[h] == nu_reactor * (H2_direct[h] + H2_tank_out[h]) * HHV_H2 / HHV_NG
         LP += CO2[h] == RNG[h]
-        
+
         # Hydrogen storage tank constraint
         if h == '0':
             LP += I_H2[h] == I_min * N_tank + H2_tank_in[h] - H2_tank_out[h]
         else:
             LP += I_H2[h] == I_H2[str(i - 1)] + H2_tank_in[h] - H2_tank_out[h]
         LP += I_H2[h] <= I_max * N_tank
-        LP += I_H2[h] >= I_min * N_tank        
+        LP += I_H2[h] >= I_min * N_tank
 
         # Demand constraint
         LP += NG_1[h] == D[i] - RNG[h]
@@ -184,6 +184,7 @@ for LP in [LP_eps, LP_cost]:
         LP += N_electrolyzer_1 * E_electrolyzer_min <= E_1[h]
         LP += N_electrolyzer_1 * E_electrolyzer_max >= E_1[h]
         LP += E_1[h] <= SBG[i]
+        LP += 0.90 * (H2_direct[h] + H2_tank_out[h]) <= 0.10 * NG_1[h]
         LP += RNG[h] <= RNG_max
         if h != '0':
             LP += -RNG_max * tau <= RNG[h] - RNG[str(i - 1)]
@@ -225,8 +226,8 @@ LP_cost += em_offset_1 >= phi * offset_max_1
 LP_cost += CAPEX_1 + OPEX_1 * TVM, 'Cost_1'
 
 
-#Estimating the time taken to solve this optimzation problem 
-#start time 
+#Estimating the time taken to solve this optimzation problem
+#start time
 start_time_cost = time.time()
 
 print(start_time_cost)
@@ -237,7 +238,7 @@ print(LP_cost.status)
 
 end_time_cost = time.time()
 
-#time difference 
+#time difference
 time_difference_cost = end_time_cost - start_time_cost
 
 print(time_difference_cost)
