@@ -338,6 +338,7 @@ Emission objective model
 
 LP_eps += em_ng + em_gas_vehicle + em_smr - \
           (em_rng + em_heng  + em_sbg + em_electrolyzer + em_booster_comp + em_pre_comp), 'Offset'
+print('eps solve start')
 LP_eps.solve()
 print(LP_eps.status)
 offset_max = LP_eps.objective.value()
@@ -420,7 +421,7 @@ my_result = my_result.append({'variable' : 'LP_cost_status', 'value' : LP_cost.s
 my_result = my_result.append({'variable' : 'LP_cost_time', 'value' : time_difference_cost} , ignore_index=True)
 my_result = my_result.append({'variable' : 'offset_max', 'value' : offset_max} , ignore_index=True)
 my_result = my_result.append({'variable' : 'phi', 'value' : phi} , ignore_index=True)
-filename = 'combined_result_5_' + str(phi)
+filename = 'combined_result_case1_' + str(phi)
 export_to_csv(my_result,filename)
 
 

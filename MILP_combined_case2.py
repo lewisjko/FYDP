@@ -424,7 +424,7 @@ my_result = my_result.append({'variable' : 'LP_cost_status', 'value' : LP_cost.s
 my_result = my_result.append({'variable' : 'LP_cost_time', 'value' : time_difference_cost} , ignore_index=True)
 my_result = my_result.append({'variable' : 'offset_max', 'value' : offset_max} , ignore_index=True)
 my_result = my_result.append({'variable' : 'phi', 'value' : phi} , ignore_index=True)
-filename = 'combined_result_5_' + str(phi)
+filename = 'combined_result_case2_' + str(phi)
 export_to_csv(my_result,filename)
 
 
