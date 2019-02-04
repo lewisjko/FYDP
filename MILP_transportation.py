@@ -155,6 +155,10 @@ I_H2_3 = pulp.LpVariable.dicts('I_H2_3',
                           [str(i) for i in input_df.index],
                           lowBound=0,
                           cat='Continuous')
+#conventional vehicle emission
+em_offset_fcv = pulp.LpVariable('em_offset_fcv',
+                          lowBound=0,
+                          cat='Continuous')
 
 #compressor emission
 em_compressor_3 = pulp.LpVariable('em_compressor_3',
@@ -227,8 +231,10 @@ for LP in [LP_eps_3,LP_cost_3]:
 
 
 
-#emission offset by FCV is emission offset due to replacing gasoline vehicle
-em_offset_fcv = 100000 * EMF_vehicle
+# emission offset by FCV is emission offset due to replacing gasoline vehicle
+LP_eps_3 += em_offset_fcv == pulp.lpSum(H2_tank_out_3[str(h)] + H2_direct_3[str(h)] for h in input_df.index) * \
+                             (sum(mobility_demand))**-1 * 100000 * EMF_vehicle
+# em_offset_fcv = 100000 * EMF_vehicle
 
 # Epsilon LP Objective
 LP_eps_3 += em_offset_fcv - em_compressor_3 - em_electrolyzer_3 - em_sbg_3, 'Offset_3'
@@ -286,5 +292,5 @@ my_result = my_result.append({'variable' : 'LP_cost_status', 'value' : LP_cost_3
 my_result = my_result.append({'variable' : 'LP_cost_time', 'value' : time_difference_cost} , ignore_index=True)
 my_result = my_result.append({'variable' : 'offset_max', 'value' : offset_max_3} , ignore_index=True)
 my_result = my_result.append({'variable' : 'phi', 'value' : phi} , ignore_index=True)
-filename = 'transportation_result'
+filename = 'transportation_result_' + str(phi)
 export_to_csv(my_result,filename)

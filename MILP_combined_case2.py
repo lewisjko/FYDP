@@ -225,6 +225,9 @@ em_heng = pulp.LpVariable('em_heng',
 em_ng = pulp.LpVariable('em_ng',
                           lowBound=0,
                           cat='Continuous')
+em_gas_vehicle = pulp.LpVariable('em_gas_vehicle',
+                          lowBound=0,
+                          cat='Continuous')
 em_electrolyzer = pulp.LpVariable('em_electrolyzer',
                           lowBound=0,
                           cat='Continuous')
@@ -326,14 +329,15 @@ for LP in [LP_eps, LP_cost]:
     # Emission constraints
     LP += pulp.lpSum(EMF_comb * RNG[h] + EMF_bio * CO2[h] + EMF_reactor * RNG[h] \
                      for h in [str(x) for x in input_df.index]) == em_rng
-    LP += pulp.lpSum(EMF_NG * NG[h] for h in [str(x) for x in input_df.index]) == em_heng
-    LP += pulp.lpSum(EMF_NG * NG_demand[h] for h in input_df.index) == em_ng
-    em_gas_vehicle = 100000 * EMF_vehicle
-    LP += pulp.lpSum(EMF_SMR * industry_demand[h] for h in input_df.index) == em_smr
+#    LP += pulp.lpSum(EMF_NG * NG[h] for h in [str(x) for x in input_df.index]) == em_heng
+    LP += pulp.lpSum(EMF_NG * (NG_demand[h] - NG[str(h)]) for h in input_df.index) == em_ng
+    LP += pulp.lpSum(H2_3[str(h)] for h in input_df.index) * \
+          (sum(mobility_demand))**-1 * 100000 * EMF_vehicle == em_gas_vehicle
+    LP += pulp.lpSum(EMF_SMR * H2_4[str(h)] for h in input_df.index) == em_smr
     LP += pulp.lpSum(EMF[int(h)] * (E[h]) for h in [str(x) for x in input_df.index]) == em_sbg
     LP += pulp.lpSum(EMF_electrolyzer * (H2_direct[h] + H2_tank_in[h]) \
                      for h in [str(x) for x in input_df.index]) == em_electrolyzer
-    LP += pulp.lpSum(EMF[n] * ECF_booster * H2_3[h] for n in input_df.index) == em_booster_comp
+    LP += pulp.lpSum(EMF[n] * ECF_booster * H2_3[str(n)] for n in input_df.index) == em_booster_comp
     LP += pulp.lpSum(EMF[n] * ECF_prestorage * H2_tank_in[str(n)] for n in input_df.index) == em_pre_comp
 
 """
@@ -341,7 +345,8 @@ Emission objective model
 """
 
 LP_eps += em_ng + em_gas_vehicle + em_smr - \
-          (em_rng + em_heng  + em_sbg + em_electrolyzer + em_booster_comp + em_pre_comp), 'Offset'
+          (em_rng + em_sbg + em_electrolyzer + em_booster_comp + em_pre_comp), 'Offset'
+print('eps solve start')
 LP_eps.solve()
 print(LP_eps.status)
 offset_max = LP_eps.objective.value()
