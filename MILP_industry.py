@@ -19,7 +19,6 @@ def export_to_csv(df,filename):
     df.to_csv(filename+'.csv')
 
 
-
 # Time-series constants
 SBG = list(input_df['SBG(kWh)']) #kwh
 industry_demand = list(input_df['industry_demand(m^3)']) #m^3
@@ -214,7 +213,7 @@ for LP_4 in [LP_eps_4, LP_cost_4]:
     LP_4 += pulp.lpSum(alpha_4) <= 1
 
     #Emission constraints
-    LP_4 += pulp.lpSum(EMF_SMR * industry_demand[h] for h in input_df.index) == em_before
+    LP_4 += pulp.lpSum(EMF_SMR * E_4[str(h)] for h in input_df.index) == em_before
 
     #Emission calculation
     LP_4 += pulp.lpSum(EMF[n] * (ECF_prestorage * H2_tank_in_4[str(n)]) for n in input_df.index)  == em_compressor_4
@@ -275,6 +274,5 @@ my_result = my_result.append({'variable' : 'LP_cost_status', 'value' : LP_cost_4
 my_result = my_result.append({'variable' : 'LP_cost_time', 'value' : time_difference_cost} , ignore_index=True)
 my_result = my_result.append({'variable' : 'offset_max', 'value' : offset_max_4} , ignore_index=True)
 my_result = my_result.append({'variable' : 'phi', 'value' : phi} , ignore_index=True)
-filename = 'industry_result'
+filename = 'industry_result_' + str(phi)
 export_to_csv(my_result,filename)
-

@@ -67,10 +67,10 @@ OPEX_upgrading = var['value']['OPEX_upgrading']
 TVM = var['value']['TVM']
 
 # Tank and compressor constants
-I_max = var['value']['Imax'] # kmol
-I_min= var['value']['Imin'] # kmol
-F_max_booster = var['value']['Fmax_booster'] # kmol
-F_max_prestorage =var['value']['Fmax_prestorage'] # kmol
+Imax = var['value']['Imax'] # kmol
+Imin= var['value']['Imin'] # kmol
+Fmax_booster = var['value']['Fmax_booster'] # kmol
+Fmax_prestorage =var['value']['Fmax_prestorage'] # kmol
 
 CAPEX_prestorage = var['value']['CAPEX_prestorage'] # $
 CAPEX_tank = var['value']['CAPEX_tank'] # $
@@ -243,12 +243,10 @@ time_difference_cost = end_time_cost - start_time_cost
 
 print(time_difference_cost)
 
-
-
 my_result = create_var_df(LP_cost)
 my_result = my_result.append({'variable' : 'LP_cost_status', 'value' : LP_cost.status} , ignore_index=True)
 my_result = my_result.append({'variable' : 'LP_cost_time', 'value' : time_difference_cost} , ignore_index=True)
 my_result = my_result.append({'variable' : 'offset_max', 'value' : offset_max_1} , ignore_index=True)
 my_result = my_result.append({'variable' : 'phi', 'value' : phi} , ignore_index=True)
-filename = 'RNG_result'
-export_to_csv(my_result,filename)
+filename = 'RNG_result_' + str(phi)
+export_to_csv(my_result, filename)
