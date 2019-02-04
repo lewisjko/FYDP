@@ -219,9 +219,9 @@ em_offset = pulp.LpVariable('em_offset',
 em_rng = pulp.LpVariable('em_rng',
                           lowBound=0,
                           cat='Continuous')
-em_heng = pulp.LpVariable('em_heng',
-                          lowBound=0,
-                          cat='Continuous')
+# em_heng = pulp.LpVariable('em_heng',
+#                           lowBound=0,
+#                           cat='Continuous')
 em_ng = pulp.LpVariable('em_ng',
                           lowBound=0,
                           cat='Continuous')
@@ -396,7 +396,7 @@ phi = 0.50
 ####################
 
 LP_cost += em_ng + em_gas_vehicle + em_smr - \
-           (em_rng + em_heng  + em_sbg + em_electrolyzer + em_booster_comp + em_pre_comp) \
+           (em_rng  + em_sbg + em_electrolyzer + em_booster_comp + em_pre_comp) \
            == em_offset
 LP_cost += em_offset >= phi * offset_max
 LP_cost += (CAPEX_electrolyzer + CAPEX_reactor + CAPEX_booster_comp + CAPEX_storage) + \
