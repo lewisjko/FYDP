@@ -229,12 +229,9 @@ for LP in [LP_eps_3,LP_cost_3]:
     LP += pulp.lpSum(EMF_electrolyzer * H2_3[h] for h in [str(x) for x in input_df.index]) == em_electrolyzer_3
     LP += pulp.lpSum(EMF[int(h)] * (E_3[h]) for h in [str(x) for x in input_df.index]) == em_sbg_3
 
-
-
-# emission offset by FCV is emission offset due to replacing gasoline vehicle
-LP_eps_3 += em_offset_fcv == pulp.lpSum(H2_tank_out_3[str(h)] + H2_direct_3[str(h)] for h in input_df.index) * \
-                             (sum(mobility_demand))**-1 * 100000 * EMF_vehicle
-# em_offset_fcv = 100000 * EMF_vehicle
+    # emission offset by FCV is emission offset due to replacing gasoline vehicle
+    LP_eps_3 += em_offset_fcv == pulp.lpSum(H2_tank_out_3[str(h)] + H2_direct_3[str(h)] for h in input_df.index) * \
+                                 (sum(mobility_demand))**-1 * 100000 * EMF_vehicle
 
 # Epsilon LP Objective
 LP_eps_3 += em_offset_fcv - em_compressor_3 - em_electrolyzer_3 - em_sbg_3, 'Offset_3'
