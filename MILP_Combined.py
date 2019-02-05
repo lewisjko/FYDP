@@ -317,10 +317,12 @@ for LP in [LP_eps, LP_cost]:
             LP += RNG_max * tau >= RNG[h] - RNG[str(i - 1)]
 
         # RNG demand constraints
-        LP += 0.85 * RNG[h] == 0.15 * (NG[h] + H2_2[h])
+        RNG_content = 0.10 * demand_factor
+        LP += (1 - RNG_content) * RNG[h] == RNG_content * (NG[h] + H2_2[h])
 
         # HENG demand constraints
-        LP += 0.925 * H2_2[h] == 0.075 * (NG[h] + RNG[h])
+        HENG_content = 0.05 * demand_factor
+        LP += (1 - HENG_content) * H2_2[h] == HENG_content * (NG[h] + RNG[h])
 
     # Integer constraints
     LP += pulp.lpSum(n * alpha[str(n)] for n in range(1, N_max)) == N_electrolyzer
