@@ -3,13 +3,13 @@ Combined model (RNG+HENG+Mobility+Industry)
 """
 
 '''
-Functions for creating variable df and exporting as a csv file 
+Functions for creating variable df and exporting as a csv file
 '''
 def create_var_df(LP_object):
     variable_tuple = [(v.name,v.varValue) for v in LP_object.variables()]
-    
+
     variable_df = pd.DataFrame(data=variable_tuple,columns=['variable','value'])
-    
+
     return variable_df
 
 def export_to_csv(df,filename):
@@ -19,8 +19,15 @@ def export_to_csv(df,filename):
 
 import pulp
 import pandas as pd
-import time 
+import time
 from numpy import count_nonzero
+
+
+
+"""Change this Julie"""
+demand_factor = 0.5
+""""""
+
 
 # Time-series constants
 SBG = list(input_df['SBG(kWh)'])
@@ -219,9 +226,9 @@ em_offset = pulp.LpVariable('em_offset',
 em_rng = pulp.LpVariable('em_rng',
                           lowBound=0,
                           cat='Continuous')
-em_heng = pulp.LpVariable('em_heng',
-                          lowBound=0,
-                          cat='Continuous')
+# em_heng = pulp.LpVariable('em_heng',
+#                           lowBound=0,
+#                           cat='Continuous')
 em_ng = pulp.LpVariable('em_ng',
                           lowBound=0,
                           cat='Continuous')
@@ -279,8 +286,8 @@ for LP in [LP_eps, LP_cost]:
         LP += H2_tank_in[h] <= N_prestorage * F_max_prestorage
 
         # Reactor constraints
-        if h == '0':
-            LP += RNG_max <= CO2_available
+#        if h == '0':
+#            LP += RNG_max <= CO2_available
         LP += RNG[h] == nu_reactor * H2_1[h] * HHV_H2 / HHV_NG
         LP += CO2[h] == RNG[h]
 
@@ -288,10 +295,10 @@ for LP in [LP_eps, LP_cost]:
         LP += NG_demand[i] == RNG[h] + NG[h] + H2_2[h]
 
         # Mobility demand constraint
-        LP += H2_3[h] == mobility_demand[i]
+        LP += H2_3[h] == demand_factor * mobility_demand[i]
 
         # Industry demand constraint
-        LP += H2_4[h] == industry_demand[i]
+        LP += H2_4[h] == demand_factor * industry_demand[i]
 
         # Supply constraint
         LP += E[h] <= SBG[i]
@@ -309,9 +316,11 @@ for LP in [LP_eps, LP_cost]:
             LP += -RNG_max * tau <= RNG[h] - RNG[str(i - 1)]
             LP += RNG_max * tau >= RNG[h] - RNG[str(i - 1)]
 
-        # NG component constraints
-        LP += 0.90 * RNG[h] <= 0.10 * (NG[h] + H2_2[h])
-        LP += 0.95 * H2_2[h] <= 0.05 * (NG[h] + RNG[h])
+        # RNG demand constraints
+        LP += 0.85 * RNG[h] == 0.15 * (NG[h] + H2_2[h])
+
+        # HENG demand constraints
+        LP += 0.925 * H2_2[h] == 0.075 * (NG[h] + RNG[h])
 
     # Integer constraints
     LP += pulp.lpSum(n * alpha[str(n)] for n in range(1, N_max)) == N_electrolyzer
@@ -320,14 +329,14 @@ for LP in [LP_eps, LP_cost]:
     # Emission constraints
     LP += pulp.lpSum(EMF_comb * RNG[h] + EMF_bio * CO2[h] + EMF_reactor * RNG[h] \
                      for h in [str(x) for x in input_df.index]) == em_rng
-    LP += pulp.lpSum(EMF_NG * NG[h] for h in [str(x) for x in input_df.index]) == em_heng
-    LP += pulp.lpSum(EMF_NG * NG_demand[h] for h in input_df.index) == em_ng
-    em_gas_vehicle = 100000 * EMF_vehicle
-    LP += pulp.lpSum(EMF_SMR * industry_demand[h] for h in input_df.index) == em_smr
+    # LP += pulp.lpSum(EMF_NG * NG[h] for h in [str(x) for x in input_df.index]) == em_heng
+    LP += pulp.lpSum(EMF_NG * (NG_demand[h] - NG[str(h)]) for h in input_df.index) == em_ng
+    em_gas_vehicle = demand_factor * 100000 * EMF_vehicle
+    LP += pulp.lpSum(EMF_SMR * demand_factor * industry_demand[h] for h in input_df.index) == em_smr
     LP += pulp.lpSum(EMF[int(h)] * (E[h]) for h in [str(x) for x in input_df.index]) == em_sbg
     LP += pulp.lpSum(EMF_electrolyzer * (H2_direct[h] + H2_tank_in[h]) \
                      for h in [str(x) for x in input_df.index]) == em_electrolyzer
-    LP += pulp.lpSum(EMF[n] * ECF_booster * H2_3[h] for n in input_df.index) == em_booster_comp
+    LP += pulp.lpSum(EMF[n] * ECF_booster * H2_3[str(n)] for n in input_df.index) == em_booster_comp
     LP += pulp.lpSum(EMF[n] * ECF_prestorage * H2_tank_in[str(n)] for n in input_df.index) == em_pre_comp
 
 """
@@ -335,7 +344,8 @@ Emission objective model
 """
 
 LP_eps += em_ng + em_gas_vehicle + em_smr - \
-          (em_rng + em_heng  + em_sbg + em_electrolyzer + em_booster_comp + em_pre_comp), 'Offset'
+          (em_rng + em_sbg + em_electrolyzer + em_booster_comp + em_pre_comp), 'Offset'
+print('eps start')
 LP_eps.solve()
 print(LP_eps.status)
 offset_max = LP_eps.objective.value()
@@ -379,13 +389,13 @@ LP_cost += pulp.lpSum(ECF_booster * H2_3[str(n)] * (HOEP[n] + TC) for n in input
 ####################
 ####CHANGE PHI VALUE
 
-phi = 0.80
+phi = 0.50
 
 ########
 ####################
 
 LP_cost += em_ng + em_gas_vehicle + em_smr - \
-           (em_rng + em_heng  + em_sbg + em_electrolyzer + em_booster_comp + em_pre_comp) \
+           (em_rng + em_sbg + em_electrolyzer + em_booster_comp + em_pre_comp) \
            == em_offset
 LP_cost += em_offset >= phi * offset_max
 LP_cost += (CAPEX_electrolyzer + CAPEX_reactor + CAPEX_booster_comp + CAPEX_storage) + \
@@ -394,8 +404,8 @@ LP_cost += total_cost, 'Cost'
 
 
 
-#Estimating the time taken to solve this optimzation problem 
-#start time 
+#Estimating the time taken to solve this optimzation problem
+#start time
 start_time_cost = time.time()
 
 print(start_time_cost)
@@ -403,10 +413,10 @@ print(start_time_cost)
 #Solve LP_cost
 LP_cost.solve()
 
-#end time 
+#end time
 end_time_cost = time.time()
 
-#time difference 
+#time difference
 time_difference_cost = end_time_cost - start_time_cost
 
 print(time_difference_cost)
@@ -418,8 +428,9 @@ my_result = my_result.append({'variable' : 'LP_cost_status', 'value' : LP_cost.s
 my_result = my_result.append({'variable' : 'LP_cost_time', 'value' : time_difference_cost} , ignore_index=True)
 my_result = my_result.append({'variable' : 'offset_max', 'value' : offset_max} , ignore_index=True)
 my_result = my_result.append({'variable' : 'phi', 'value' : phi} , ignore_index=True)
-filename = 'combined_result_' + str(phi)
+filename = 'combined_result_equal_case_' + str(phi)
 export_to_csv(my_result,filename)
+
 
 
 
