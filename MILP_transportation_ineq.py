@@ -191,6 +191,9 @@ em_sbg_3 = pulp.LpVariable('em_sbg_3',
 #CAPEX and OPEX
 CAPEX_3 = pulp.LpVariable('CAPEX_3', lowBound=0, cat='Continuous')
 OPEX_3 = pulp.LpVariable('OPEX_3', lowBound=0, cat='Continuous')
+# Total cost
+total_cost = pulp.LpVariable('total_cost', lowBound=0, cat='Continuous')
+
 
 # This for loop creates two stage - the first stage is minimizing the emission offset
 # The second stage is minimizing the total cost
@@ -236,7 +239,7 @@ for LP in [LP_eps_3,LP_cost_3]:
     LP += pulp.lpSum(EMF[int(h)] * (E_3[h]) for h in [str(x) for x in input_df.index]) == em_sbg_3
 
     # emission offset by FCV is emission offset due to replacing gasoline vehicle
-    LP_eps_3 += em_offset_fcv == pulp.lpSum(H2_tank_out_3[str(h)] + H2_direct_3[str(h)] for h in input_df.index) * \
+    LP += em_offset_fcv == pulp.lpSum(H2_tank_out_3[str(h)] + H2_direct_3[str(h)] for h in input_df.index) * \
                                  (sum(mobility_demand))**-1 * 100000 * EMF_vehicle
 
 # Epsilon LP Objective
@@ -273,7 +276,9 @@ phi = 0.5
 # Cost LP Objective
 LP_cost_3 += em_offset_fcv - em_compressor_3 - em_electrolyzer_3 -em_sbg_3 == em_offset_3
 LP_cost_3 += em_offset_3 >= phi * offset_max_3
-LP_cost_3 += CAPEX_3 + OPEX_3 * TVM, 'Cost_3'
+LP_cost_3 += CAPEX_3 + OPEX_3 * TVM == total_cost
+LP_cost_3 += total_cost, 'Cost_3'
+
 
 
 print('cost start')

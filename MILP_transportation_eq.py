@@ -187,6 +187,8 @@ em_sbg_3 = pulp.LpVariable('em_sbg_3',
 #CAPEX and OPEX
 CAPEX_3 = pulp.LpVariable('CAPEX_3', lowBound=0, cat='Continuous')
 OPEX_3 = pulp.LpVariable('OPEX_3', lowBound=0, cat='Continuous')
+# Total cost
+total_cost = pulp.LpVariable('total_cost', lowBound=0, cat='Continuous')
 
 # This for loop creates two stage - the first stage is minimizing the emission offset
 # The second stage is minimizing the total cost
@@ -266,7 +268,10 @@ phi = 0.5
 # Cost LP Objective
 LP_cost_3 += em_offset_fcv - em_compressor_3 - em_electrolyzer_3 -em_sbg_3 == em_offset_3
 LP_cost_3 += em_offset_3 >= phi * offset_max_3
-LP_cost_3 += CAPEX_3 + OPEX_3 * TVM, 'Cost_3'
+LP_cost_3 += CAPEX_3 + OPEX_3 * TVM == total_cost
+LP_cost_3 += total_cost, 'Cost_3'
+
+
 
 
 print('cost start')
