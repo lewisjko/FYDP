@@ -184,6 +184,8 @@ em_sbg_4 = pulp.LpVariable('em_sbg_4',
 
 CAPEX_4 = pulp.LpVariable('CAPEX_4', lowBound=0, cat='Continuous')
 OPEX_4 = pulp.LpVariable('OPEX_4', lowBound=0, cat='Continuous')
+# Total cost
+total_cost = pulp.LpVariable('total_cost', lowBound=0, cat='Continuous')
 
 for LP_4 in [LP_eps_4, LP_cost_4]:
     for i, h in enumerate([str(i) for i in input_df.index]):
@@ -255,8 +257,8 @@ phi = 0.5
 
 LP_cost_4 += em_before - em_compressor_4 - em_electrolyzer_4 - em_sbg_4 == em_offset_4
 LP_cost_4 += em_offset_4 >= phi * offset_max_4
-LP_cost_4 += CAPEX_4 + OPEX_4 * TVM, 'Cost_4'
-
+LP_cost_4 += CAPEX_4 + OPEX_4 * TVM == total_cost
+LP_cost_4 += total_cost, 'Cost_4'
 
 print('cost start')
 LP_cost_4.solve()

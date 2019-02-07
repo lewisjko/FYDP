@@ -142,6 +142,10 @@ I_H2 = pulp.LpVariable.dicts('I_H2',
 CAPEX_2 = pulp.LpVariable('CAPEX_2', lowBound=0, cat='Continuous')
 OPEX_2 = pulp.LpVariable('OPEX_2', lowBound=0, cat='Continuous')
 
+# Total cost
+total_cost = pulp.LpVariable('total_cost', lowBound=0, cat='Continuous')
+
+
 for LP in [LP_eps, LP_cost]:
     for i, h in enumerate([str(i) for i in input_df.index]):
         # Energy and flow constraints
@@ -149,11 +153,11 @@ for LP in [LP_eps, LP_cost]:
 
         # Hydrogen storage tank constraint
         if h == '0':
-            LP += I_H2[h] == I_min * N_tank + H2_tank_in[h] - H2_tank_out[h]
+            LP += I_H2[h] == Imin * N_tank + H2_tank_in[h] - H2_tank_out[h]
         else:
             LP += I_H2[h] == I_H2[str(i - 1)] + H2_tank_in[h] - H2_tank_out[h]
-        LP += I_H2[h] <= I_max * N_tank
-        LP += I_H2[h] >= I_min * N_tank
+        LP += I_H2[h] <= Imax * N_tank
+        LP += I_H2[h] >= Imin * N_tank
 
         # Demand constraint
         LP += NG_2[h] + H2_direct[h] + H2_tank_out[h] == D[i]
@@ -198,8 +202,9 @@ phi = 0.5
 
 LP_cost += em_ng - em_heng == em_offset_2
 LP_cost += em_offset_2 >= phi * offset_max_2
-LP_cost += CAPEX_2 + OPEX_2 * TVM, 'Cost_2'
 
+LP_cost += CAPEX_2 + OPEX_2 * TVM == total_cost
+LP_cost += total_cost,'Cost_2'
 
 
 
