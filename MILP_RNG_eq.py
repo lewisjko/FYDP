@@ -202,6 +202,9 @@ for LP in [LP_eps, LP_cost]:
             LP += pulp.lpSum(n * alpha_1[str(n)] for n in range(1, N_max)) == N_electrolyzer_1
             LP += pulp.lpSum(alpha_1) <= 1
 
+        # Prestorage compressor capacity constraint
+        LP += H2_tank_in[h] <= N_prestorage * Fmax_prestorage
+
     # Emission constraints
     LP += pulp.lpSum(EMF_NG * NG_1[h] + EMF_comb * RNG[h] + EMF[int(h)] * E_1[h] + \
                        EMF_bio * CO2[h] + EMF_electrolyzer * (H2_direct[h] + H2_tank_in[h]) + EMF_reactor * RNG[h] + \
