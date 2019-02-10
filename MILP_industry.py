@@ -213,7 +213,7 @@ for LP_4 in [LP_eps_4, LP_cost_4]:
     LP_4 += pulp.lpSum(alpha_4) <= 1
 
     #Emission constraints
-    LP_4 += pulp.lpSum(EMF_SMR * E_4[str(h)] for h in input_df.index) == em_before
+    LP_4 += pulp.lpSum(EMF_SMR * H2_4[str(h)] for h in input_df.index) == em_before
 
     #Emission calculation
     LP_4 += pulp.lpSum(EMF[n] * (ECF_prestorage * H2_tank_in_4[str(n)]) for n in input_df.index)  == em_compressor_4
