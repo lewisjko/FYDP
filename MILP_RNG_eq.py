@@ -188,12 +188,14 @@ for LP in [LP_eps, LP_cost]:
 
         # Demand constraint
         LP += NG_1[h] == D[i] - RNG[h]
+        LP += 0.90 * RNG[h] == 0.10 * NG_1[h]
+
 
         # Electrolyzer and reactor constraints
         LP += N_electrolyzer_1 * E_electrolyzer_min <= E_1[h]
         LP += N_electrolyzer_1 * E_electrolyzer_max >= E_1[h]
         LP += E_1[h] <= SBG[i]
-        LP += 0.90 * (H2_direct[h] + H2_tank_out[h]) == 0.10 * NG_1[h]
+
         LP += RNG[h] <= RNG_max
         if h != '0':
             LP += -RNG_max * tau <= RNG[h] - RNG[str(i - 1)]
