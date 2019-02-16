@@ -33,7 +33,7 @@ HOEP = list(input_df['HOEP'])
 EMF = list(input_df['EMF(tonne/kWh)'])
 
 # Fixed constants
-N_max = 3510
+N_max = 3502
 N_max += 1
 nu_electrolyzer = var['value']['electrolyzer_eff']
 E_HHV_H2 = var['value']['E_hhv_h2']
@@ -185,7 +185,7 @@ offset_max_2 = LP_eps.objective.value()
 print(LP_eps.status)
 
 # CAPEX
-C_electrolyzer = [beta * C_0 * i ** mu for i in range(1, N_max)]
+C_electrolyzer = [beta * 1000 * C_0 * i ** mu for i in range(1, N_max)]
 LP_cost += pulp.lpSum(alpha_2[str(n)] * C_electrolyzer[n - 1] for n in range(1, N_max)) + \
            (N_tank * CAPEX_tank + N_prestorage * CAPEX_prestorage) * 20 == CAPEX_2
 

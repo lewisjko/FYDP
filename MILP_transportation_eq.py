@@ -99,7 +99,7 @@ ECF_prestorage = ECF_prestorage / MW_H2 * density_H2 #kWh/m^3
 
 
 #number of electrolyzer max
-N_electrolyzer_max = int(3510)
+N_electrolyzer_max = int(3502)
 
 
 # LP objective variable for transportation model
@@ -244,7 +244,7 @@ print(LP_eps_3.status)
 offset_max_3 = LP_eps_3.objective.value()
 
 # Cost of electrolyzer list
-C_electrolyzer = [beta * C_0 * i ** mu for i in range(1, N_electrolyzer_max+1)]
+C_electrolyzer = [beta * 1000 * C_0 * i ** mu for i in range(1, N_electrolyzer_max+1)]
 
 # CAPEX
 LP_cost_3 += pulp.lpSum(alpha_3[str(n)] * C_electrolyzer[n - 1] for n in range(1, N_electrolyzer_max+1)) + \

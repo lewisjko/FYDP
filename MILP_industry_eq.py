@@ -105,7 +105,7 @@ ECF_prestorage = ECF_prestorage / MW_H2 * density_H2 #kWh/m^3
 EMF_SMR=EMF_SMR*0.001/MW_H2*density_H2 #tonne CO2/m^3 of H2
 
 #number of electrolyzer max
-N_electrolyzer_max = int(3510)
+N_electrolyzer_max = int(3502)
 
 
 
@@ -239,7 +239,7 @@ print(LP_eps_4.status)
 offset_max_4 = LP_eps_4.objective.value()
 
 # Cost of electrolyzer list
-C_electrolyzer = [beta * C_0 * i ** mu for i in range(1, N_electrolyzer_max+1)]
+C_electrolyzer = [beta * 1000 * C_0 * i ** mu for i in range(1, N_electrolyzer_max+1)]
 
 # CAPEX
 LP_cost_4 += pulp.lpSum(alpha_4[str(n)] * C_electrolyzer[n - 1] for n in range(1, N_electrolyzer_max+1)) + \

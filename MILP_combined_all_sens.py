@@ -49,7 +49,7 @@ HOEP = list(input_df['HOEP'])
 EMF = list(input_df['EMF(tonne/kWh)'])
 
 # Electrolyzer and flow constants
-N_max = 3510
+N_max = 3502
 N_max += 1
 nu_electrolyzer = var['value']['electrolyzer_eff']
 E_HHV_H2 = var['value']['E_hhv_h2'] # kwh/m^3
@@ -368,7 +368,7 @@ Cost objective model
 """
 
 # CAPEX electrolyzer
-C_electrolyzer = [beta * C_0 * i ** mu for i in range(1, N_max)]
+C_electrolyzer = [beta * 1000 * C_0 * i ** mu for i in range(1, N_max)]
 LP_cost += pulp.lpSum(alpha[str(n)] * C_electrolyzer[n - 1] for n in range(1, N_max)) \
            == CAPEX_electrolyzer
 
